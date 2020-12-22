@@ -688,6 +688,8 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     if cube_index == -1:
         tab['coadd_index_start'] = [exp.images[extname].coadd_index_range[0] for extname in tab['camera']]
         tab['coadd_index_end'] = [exp.images[extname].coadd_index_range[1] for extname in tab['camera']]
+        tab['coadd_mjdobs_min'] = [exp.bintables[extname]['MJD-OBS'][ind] for extname, ind in zip(tab['camera'], tab['coadd_index_start'])]
+        tab['coadd_mjdobs_max'] =  [exp.bintables[extname]['MJD-OBS'][ind] for extname, ind in zip(tab['camera'], tab['coadd_index_end'])]
     
     tab['racen'] = np.zeros(len(tab), dtype=float)
     tab['deccen'] = np.zeros(len(tab), dtype=float)
