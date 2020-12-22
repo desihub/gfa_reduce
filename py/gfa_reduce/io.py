@@ -245,7 +245,7 @@ def retrieve_git_rev():
 def write_image_level_outputs(exp, outdir, proc_obj, gzip=True,
                               cube_index=None, dont_write_invvar=False,
                               compress_reduced_image=False,
-                              write_detmap=False):
+                              write_detmap=False, mjdrange=None):
     # exp is a GFA_exposure object
     # outdir is the output directory (string)
 
@@ -268,6 +268,9 @@ def write_image_level_outputs(exp, outdir, proc_obj, gzip=True,
 
         for hdu in hdulist:
             hdu.header['GITREV'] = proc_obj.gitrev
+            if mjdrange is not None:
+                hdu.header['REQMJDLO'] = mjdrange[0]
+                hdu.header['REQMJDHI'] = mjdrange[1]
 
         print('Attempting to write ' + flavor + ' image output to ' + 
               outname)

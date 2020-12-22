@@ -195,7 +195,7 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
                                          cube_index=cube_index,
                                          dont_write_invvar=dont_write_invvar,
                                          compress_reduced_image=compress_reduced_image,
-                                         write_detmap=write_detmap)
+                                         write_detmap=write_detmap, mjdrange=mjdrange)
 
         if not dont_write_ccds:
             io.write_ccds_table(ccds, outdir, proc_obj, cube_index=cube_index)
