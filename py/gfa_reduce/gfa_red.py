@@ -179,7 +179,8 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
                                   cube_index=cube_index, ps1=ps1,
                                   det_sn_thresh=det_sn_thresh,
                                   sky_mags=do_sky_mag,
-                                  minimal=minimal_ccds_metadata)
+                                  minimal=minimal_ccds_metadata,
+                                  mjdrange=mjdrange)
     
     if write_outputs:
 

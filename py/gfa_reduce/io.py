@@ -621,7 +621,7 @@ def dark_current_ccds_table(tab, exp):
     
 def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
                         ps1=None, det_sn_thresh=5.0, sky_mags=True,
-                        minimal=False):
+                        minimal=False, mjdrange=None):
 
     nrows = len(tab)
 
@@ -752,6 +752,10 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     high_level_ccds_metrics(tab, catalog, exp)
     astrom_ccds_table(tab, exp)
     dark_current_ccds_table(tab, exp)
+
+    if mjdrange is not None:
+        tab['req_mjd_min'] = mjdrange[0]
+        tab['req_mjd_max'] = mjdrange[1]
 
     return tab
 
