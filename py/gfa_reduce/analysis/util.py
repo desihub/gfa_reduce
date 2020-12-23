@@ -768,7 +768,7 @@ def coadd_cube_index_range(bintable, cube_index, mjdrange):
 
         # always assume zeroth frame is acquisition image !!
         indmin = max(np.min(w), 1)
-        indmax = np.max(w)
+        indmax = max(np.max(w), 1)
 
         assert(indmax >= indmin)
 
