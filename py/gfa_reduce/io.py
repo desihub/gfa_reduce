@@ -11,6 +11,7 @@ import gfa_reduce.analysis.util as util
 import numpy as np
 import time
 from gfa_reduce.gfa_wcs import ccd_center_radec
+import json
 
 # in the context of this file, "image" and "exposure" generally refer to 
 # GFA_image and GFA_exposure objects
@@ -229,8 +230,12 @@ def check_image_level_outputs_exist(outdir, fname_in, gzip=True,
         _ = reduced_image_fname(outdir, fname_in, flavor, gzip=gzip,
                                 cube_index=cube_index, outdir_not_needed=True)
 
-def retrieve_git_rev():
-    code_dir = os.path.dirname(os.path.realpath(__file__))
+def retrieve_git_rev(fname=None):
+
+    if fname is None:
+        fname = __file__
+
+    code_dir = os.path.dirname(os.path.realpath(fname))
     cwd = os.getcwd()
     do_chdir = (cwd[0:len(code_dir)] != code_dir)
     if do_chdir:
@@ -877,6 +882,9 @@ def write_dm_fieldmodel(fm, outdir, fname_in, cube_index=None):
 
     outname_tmp = outname + '.tmp'
     with open(outname_tmp, 'w') as file:
-        file.write(fm.tojson())
+        _json = json.loads(fm.tojson())
+        _json['desimeter_gitrev'] = fm.desimeter_gitrev
+        _json['n_cameras'] = fm.n_cameras
+        file.write(json.dumps(_json))
 
     os.rename(outname_tmp, outname)

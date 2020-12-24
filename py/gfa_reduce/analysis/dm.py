@@ -4,6 +4,8 @@ from desimeter.fieldmodel import FieldModel
 import copy
 from astropy.table import Table
 import time
+import desimeter
+import gfa_reduce.io as io
 
 def fit_dm_fieldmodel(header, ccds, _catalog):
     t0 = time.time()
@@ -62,6 +64,7 @@ def fit_dm_fieldmodel(header, ccds, _catalog):
 
     # any other metadata that I want to record?
     fm.n_cameras = len(np.unique(catalog['extname']))
+    fm.desimeter_gitrev = io.retrieve_git_rev(fname=desimeter.__file__)
 
     dt = time.time()-t0
     print('total time taken to derive desimeter FieldModel : ', dt, ' seconds')
