@@ -766,6 +766,10 @@ def coadd_cube_index_range(bintable, cube_index, mjdrange):
         w = np.where((bintable['MJD-OBS'] >= mjdmin) &
                      (bintable['MJD-OBS'] < mjdmax))[0]
 
+        if len(w) == 0:
+            print('NO TEMPORAL OVERLAP BETWEEN GUIDE CUBE AND SPECTROSCOPY !?')
+            assert(False)
+
         # always assume zeroth frame is acquisition image !!
         indmin = max(np.min(w), 1)
         indmax = max(np.max(w), 1)
