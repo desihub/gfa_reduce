@@ -680,6 +680,10 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     tab['pmcover'] = exp.try_retrieve_header_card('PMCOVER', placeholder='')
     tab['moonra'] = exp.try_retrieve_header_card('MOONRA', placeholder=np.nan)
     tab['moondec'] = exp.try_retrieve_header_card('MOONDEC', placeholder=np.nan)
+
+    tab['moon_zd_deg'] = util._zenith_distance(tab['moonra'][0],
+                                               tab['moondec'][0],
+                                               tab['lst_deg'][0])
     
     tab['t_c_for_dark'] = [exp.images[extname].t_c_for_dark for extname in tab['camera']]
     tab['t_c_for_dark_is_guess'] = [int(exp.images[extname].t_c_for_dark_is_guess) for extname in tab['camera']]
