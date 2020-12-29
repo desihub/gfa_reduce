@@ -9,8 +9,10 @@ import astropy.io.fits as fits
 from astropy import wcs
 from astropy.stats import mad_std
 from scipy.stats import scoreatpercentile
+import scipy.ndimage as ndimage
 import gfa_reduce.analysis.util as util
 from gfa_reduce.analysis.djs_photcen import djs_photcen
+import os
 
 class PSF:
     def __init__(self, cube, im_header, cube_index):
@@ -56,6 +58,12 @@ class PSF:
             self.flux_weighted_centroid() # should i also send the initial djs_photcen (x_start, y_start) here ?
 
             self.fiber_fracflux = util._fiber_fracflux(self.psf_image,
+                                                       x_centroid=self.xcen_flux_weighted,
+                                                       y_centroid=self.ycen_flux_weighted)
+
+        self.elg_convolution()
+
+        self.fiber_fracflux_elg = util._fiber_fracflux(self.smoothed_psf_image,
                                                        x_centroid=self.xcen_flux_weighted,
                                                        y_centroid=self.ycen_flux_weighted)
 
@@ -121,6 +129,17 @@ class PSF:
 
         # could do a more detailed job of this later...
         self.moffat_fwhm_asec = self.moffat_fwhm_pix*0.205
+
+    def elg_convolution(self):
+        par = common.gfa_misc_params()
+        fname = os.path.join(os.environ[par['meta_env_var']],
+                             par['exp_kernel_filename'])
+
+        kern = fits.getdata(fname)
+
+        smth = ndimage.convolve(self.psf_image, kern, mode='constant')
+
+        self.smoothed_psf_image = smth
 
 class Overscan:
     """Object to encapsulate single-camera worth of overscan and prescan"""
