@@ -12,6 +12,8 @@ import numpy as np
 import time
 from gfa_reduce.gfa_wcs import ccd_center_radec
 import json
+from astropy.coordinates import EarthLocation
+import astropy
 
 # in the context of this file, "image" and "exposure" generally refer to 
 # GFA_image and GFA_exposure objects
@@ -684,6 +686,11 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     tab['moon_zd_deg'] = util._zenith_distance(tab['moonra'][0],
                                                tab['moondec'][0],
                                                tab['lst_deg'][0])
+
+    print('Attempting to compute Moon illumination fraction...')
+    loc = EarthLocation.of_site('Kitt Peak')
+    _time = astropy.time.Time(tab['mjd'][0], format='mjd')
+    tab['moon_illumination'] = util.moon_illumination(_time, loc)
     
     tab['t_c_for_dark'] = [exp.images[extname].t_c_for_dark for extname in tab['camera']]
     tab['t_c_for_dark_is_guess'] = [int(exp.images[extname].t_c_for_dark_is_guess) for extname in tab['camera']]

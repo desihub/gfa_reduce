@@ -9,6 +9,7 @@ import astropy.io.fits as fits
 from scipy.optimize import minimize
 import gfa_reduce.xmatch.gaia as gaia
 from astropy.time import Time
+import astropy
 
 def use_for_fwhm_meas(tab, bad_amps=None, snr_thresh=20,
                       no_sig_major_cut=False):
@@ -777,3 +778,18 @@ def coadd_cube_index_range(bintable, cube_index, mjdrange):
         assert(indmax >= indmin)
 
         return indmin, indmax
+
+# from John Moustakas notebook
+def moon_phase_angle(time, location):
+    sun = astropy.coordinates.get_sun(time).transform_to(astropy.coordinates.AltAz(
+        location=location, obstime=time))
+    moon = astropy.coordinates.get_moon(time, location)
+    elongation = sun.separation(moon)
+    return np.arctan2(sun.distance*np.sin(elongation),
+                      moon.distance - sun.distance*np.cos(elongation))
+
+# from John Moustakas notebook
+def moon_illumination(time, location):
+    i = moon_phase_angle(time, location)
+    k = (1 + np.cos(i))/2.0
+    return k.value
