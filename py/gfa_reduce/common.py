@@ -45,13 +45,15 @@ def gfa_misc_params():
     return par
 
 def gfa_camera_gain_dict():
-    # HACK !!
-    gains = {'GUIDE0': 3.9,
-             'GUIDE2': 3.9,
-             'GUIDE3': 3.9, 
-             'GUIDE5': 3.9,
-             'GUIDE7': 3.9,
-             'GUIDE8': 3.9}
+    # from 20201123 dome screen measurements
+
+    gains = {'GUIDE0' : 3.632,
+             'GUIDE2' : 3.731,
+             'GUIDE3' : 3.732,
+             'GUIDE5' : 3.748,
+             'GUIDE7' : 3.839,
+             'GUIDE8' : 3.718}
+
     return gains
 
 def gfa_camera_gain(extname):
