@@ -47,12 +47,17 @@ def has_wrong_dimensions(exp):
     return False
     
 def nominal_pixel_area_sq_asec(extname):
-    par = common.gfa_misc_params()
 
-    pixel_area_sq_asec = \
-        (par['nominal_mer_cd']*3600.0)*(par['nominal_sag_cd']*3600.0)
+    # based on my WCS templates
 
-    return pixel_area_sq_asec
+    areas = {'GUIDE0' : 0.041791638,
+             'GUIDE2' : 0.041839157,
+             'GUIDE3' : 0.041842144,
+             'GUIDE5' : 0.041827994,
+             'GUIDE7' : 0.041854736,
+             'GUIDE8' : 0.041811833}
+
+    return areas[extname]
 
 def nominal_pixel_sidelen_arith():
     # calculate/return the nominal pixel sidelength in arcseconds
