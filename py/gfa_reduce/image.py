@@ -47,9 +47,9 @@ class PSF:
         # off-centering in the catalog aperture fluxes
         self.aper_corr_fac = util._aperture_corr_fac(self.psf_image)
 
-        self.fiber_fracflux = util._fiber_fracflux(self.psf_image,
-                                                   x_centroid=self.xcen_flux_weighted,
-                                                   y_centroid=self.ycen_flux_weighted)
+        self.fiber_fracflux, _, psf_tot_flux = util._fiber_fracflux(self.psf_image,
+                                                                    x_centroid=self.xcen_flux_weighted,
+                                                                    y_centroid=self.ycen_flux_weighted)
 
         if self.fiber_fracflux < 0.5:
             self.cbox += (4.0/3.0)*10*(0.5 - max(self.fiber_fracflux, 0))
@@ -57,15 +57,18 @@ class PSF:
 
             self.flux_weighted_centroid() # should i also send the initial djs_photcen (x_start, y_start) here ?
 
-            self.fiber_fracflux = util._fiber_fracflux(self.psf_image,
-                                                       x_centroid=self.xcen_flux_weighted,
-                                                       y_centroid=self.ycen_flux_weighted)
+            self.fiber_fracflux, _, psf_tot_flux = util._fiber_fracflux(self.psf_image,
+                                                                        x_centroid=self.xcen_flux_weighted,
+                                                                        y_centroid=self.ycen_flux_weighted)
 
         self.elg_convolution()
 
-        self.fiber_fracflux_elg = util._fiber_fracflux(self.smoothed_psf_image,
-                                                       x_centroid=self.xcen_flux_weighted,
-                                                       y_centroid=self.ycen_flux_weighted)
+        _, elg_fiber_flux, __ = util._fiber_fracflux(self.smoothed_psf_image,
+                                                     x_centroid=self.xcen_flux_weighted,
+                                                     y_centroid=self.ycen_flux_weighted)
+
+        # normalize FIBER_FRACFLUX_ELG based on the total PSF flux *before* convolving
+        self.fiber_fracflux_elg = elg_fiber_flux/psf_tot_flux
 
         if (np.abs(self.xcen_flux_weighted - (self.sidelen // 2)) > 1) or (np.abs(self.ycen_flux_weighted - (self.sidelen // 2)) > 1):
             self.xcen_flux_weighted = float(self.sidelen // 2)

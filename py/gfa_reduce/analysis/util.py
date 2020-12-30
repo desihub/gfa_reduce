@@ -444,10 +444,13 @@ def _fiber_fracflux(psf, x_centroid=None, y_centroid=None,
     _mask = np.logical_not(mask)
 
     in_fiber = (radius <= fib_rad*binfac)
-    
-    frac = np.sum(_psf*_mask*in_fiber)/np.sum(_psf*_mask)
 
-    return frac
+    numerator = np.sum(_psf*_mask*in_fiber) # PSF flux within fiber aperture
+    denominator = np.sum(_psf*_mask) # total PSF flux
+
+    frac = numerator/denominator
+
+    return frac, numerator, denominator
 
 def _aperture_corr_fac(psf, x_centroid=None, y_centroid=None):
 
@@ -457,9 +460,11 @@ def _aperture_corr_fac(psf, x_centroid=None, y_centroid=None):
     asec_per_pix = nominal_pixel_sidelen_arith()
     rad_pix = rad_asec/asec_per_pix
 
-    return _fiber_fracflux(psf, x_centroid=x_centroid,
-                           y_centroid=y_centroid,
-                           fib_rad_pix=rad_pix)
+    fac, _, __ = _fiber_fracflux(psf, x_centroid=x_centroid,
+                                 y_centroid=y_centroid,
+                                 fib_rad_pix=rad_pix)
+
+    return fac
     
 def zenith_zeropoint_photometric_1amp(extname, amp):
     par = common.gfa_misc_params()
