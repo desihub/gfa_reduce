@@ -65,13 +65,13 @@ def gfa_camera_gain(extname):
 
 def gfa_camera_readnoise_dict():
     # units are electrons per pixel
-    # HACK !!
-    readnoise_electrons = {'GUIDE0': 20.0,
-                           'GUIDE2': 20.0,
-                           'GUIDE3': 20.0,
-                           'GUIDE5': 20.0,
-                           'GUIDE7': 20.0,
-                           'GUIDE8': 20.0}
+
+    readnoise_electrons = {'GUIDE0': 19.4077,
+                           'GUIDE2': 22.0799,
+                           'GUIDE3': 18.9685,
+                           'GUIDE5': 18.5241,
+                           'GUIDE7': 18.6089,
+                           'GUIDE8': 21.0796}
 
     return readnoise_electrons
 
