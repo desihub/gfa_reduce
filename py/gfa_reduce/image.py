@@ -476,7 +476,16 @@ class GFA_image:
 
         self.sky_mag = sky_mag
 
+        # calculate sky mag for just upper 8 rows (lumping together amps G and H)
+        self.sky_mag_upper()
+
         return sky_mag
+
+    def sky_mag_upper(self):
+        # only upper 8 rows of image -- see DESI-5334
+        self.sky_level_adu_upper = np.median(self.image[1024:1032, 0:2047])
+        self.sky_mag_upper = sky.adu_to_surface_brightness(self.sky_level_adu_upper, 
+                                                           self.time_s_for_dark, self.extname)
 
     def catalog_add_radec(self, catalog):
         # use wcs attribute to convert from pixel to world coordinates

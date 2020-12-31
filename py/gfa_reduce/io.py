@@ -644,6 +644,7 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
 
     if sky_mags:
         tab['sky_mag_ab'] = [exp.images[extname].sky_mag for extname in tab['camera']]
+        tab['sky_mag_ab_subregion'] = [exp.images[extname].sky_mag_upper for extname in tab['camera']]
 
     amps = common.valid_amps_list()
 
