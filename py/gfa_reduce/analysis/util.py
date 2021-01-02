@@ -422,7 +422,7 @@ def _fiber_fracflux(psf, x_centroid=None, y_centroid=None,
 
     # not really sure if this edge case will ever happen ??
     if (np.sum(psf) <= 0):
-        return np.nan
+        return np.nan, np.nan, np.nan
         
     binfac = 11
 
@@ -651,7 +651,7 @@ def load_lst():
 
     return eph
 
-def interp_lst(mjd, eph=None):
+def interp_ephemeris(mjd, eph=None, mphase=False):
 
     # for now assume that mjd is a scalar, can deal with vectorization later..
 
@@ -676,22 +676,25 @@ def interp_lst(mjd, eph=None):
     assert(mjd_upper >= mjd)
     assert(mjd_lower <= mjd)
 
-    lst_upper = eph['LST_DEG'][ind_upper]
-    lst_lower = eph['LST_DEG'][ind_lower]
+    colname = 'MPHASE' if mphase else 'LST_DEG'
+    val_upper = eph[colname][ind_upper]
+    val_lower = eph[colname][ind_lower]
 
-    if (lst_lower > lst_upper):
-        lst_lower -= 360.0
+    if not mphase:
+        if (val_lower > val_upper):
+            val_lower -= 360.0
 
-    lst = ((mjd - mjd_lower)*lst_upper + (mjd_upper - mjd)*lst_lower)/(mjd_upper-mjd_lower)
+    result = ((mjd - mjd_lower)*val_upper + (mjd_upper - mjd)*val_lower)/(mjd_upper-mjd_lower)
     
     # bound to be within 0 -> 360
 
-    assert(lst < 360)
+    if not mphase:
+        assert(result < 360)
 
-    if (lst < 0):
-        lst += 360.0
+        if (result < 0):
+            result += 360.0
 
-    return lst
+    return result
 
 def _zenith_distance(ra, dec, lst_deg):
 
