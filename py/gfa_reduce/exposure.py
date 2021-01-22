@@ -25,6 +25,16 @@ class GFA_exposure:
 
         # exposure-level header
         self.exp_header = exp_header
+
+        # hack for 20210106
+        if self.exp_header is not None:
+            if self.exp_header['SKYRA'] is None:
+                print('REPLACING GUIDER SKYRA WITH REQRA')
+                self.exp_header['SKYRA'] = self.exp_header['REQRA']
+            if self.exp_header['SKYDEC'] is None:
+                print('REPLACING GUIDER SKYDEC WITH REQDEC')
+                self.exp_header['SKYDEC'] = self.exp_header['REQDEC']
+
         self.pixels_calibrated = None
         self.bintables = bintables
         self.max_cbox = max_cbox
@@ -253,7 +263,7 @@ class GFA_exposure:
                 image.bintable_row = self.bintables[extname][image.cube_index]
 
     def try_retrieve_header_card(self, keyword, placeholder=None):
-        if keyword in self.exp_header.keys():
+        if (keyword in self.exp_header.keys()) and (self.exp_header[keyword] is not None):
             return self.exp_header[keyword]
         else:
             print('could not find ' + keyword + ' in exposure-level header !!')

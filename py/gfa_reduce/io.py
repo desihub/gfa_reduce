@@ -41,8 +41,8 @@ def load_image_from_hdu(hdu, verbose=True, cube_index=None, store_detmap=False,
     # are correct in the exposure-level header but incorrect in the
     # per-image headers, for example EXPID = 65021
     if ('SKYRA' in exp_header) and ('SKYDEC' in exp_header):
-        header['SKYRA'] = exp_header['SKYRA']
-        header['SKYDEC'] = exp_header['SKYDEC']
+        header['SKYRA'] = exp_header['SKYRA'] if exp_header['SKYRA'] is not None else exp_header['REQRA']
+        header['SKYDEC'] = exp_header['SKYDEC'] if exp_header['SKYDEC'] is not None else exp_header['REQDEC']
 
     return GFA_image(hdu.data, header, cube_index=cube_index,
                      store_detmap=store_detmap,
@@ -186,7 +186,10 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
     # fake file name
     if not from_file:
         exp.assign_input_filename(fname)
-    
+
+    if cube_index != -1:
+        util._patch_guider_mjd_obs(exp)
+
     print('Successfully loaded exposure : ' + fname)
     print('Exposure has ' + str(exp.num_images_populated()) + 
           ' image extensions populated')

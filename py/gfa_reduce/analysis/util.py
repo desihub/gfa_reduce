@@ -806,3 +806,16 @@ def moon_illumination(time, location):
     i = moon_phase_angle(time, location)
     k = (1 + np.cos(i))/2.0
     return k.value
+
+def _patch_guider_mjd_obs(exp):
+    # for cases such as guide cubes on night 20210106
+    # where MJD-OBS is absent from the GUIDER header
+    # but can be filled in based on the 
+
+    # exp is an exposure object
+
+    if 'MJD-OBS' in exp.exp_header:
+        return
+    else:
+        print('PATCHING MISSING GUIDER HEADER MJD-OBS')
+        exp.exp_header['MJD-OBS'] = list(exp.bintables.values())[0][0]['MJD-OBS']
