@@ -187,7 +187,7 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
     if not from_file:
         exp.assign_input_filename(fname)
 
-    if cube_index != -1:
+    if cube_index != None:
         util._patch_guider_mjd_obs(exp)
 
     print('Successfully loaded exposure : ' + fname)
