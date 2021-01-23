@@ -7,7 +7,24 @@ import time
 import desimeter
 import gfa_reduce.io as io
 
-def fit_dm_fieldmodel(header, ccds, _catalog):
+def _check_header_cards(header):
+
+    keywords = ['TARGTRA', 'TARGTDEC', 'FOCUS', 'ADC1PHI', 'ADC2PHI']
+
+    for kw in keywords:
+        if (kw not in header) or (header[kw] is None):
+            print('SKIPPING DESIMETER FIELD MODEL DUE TO MISSING METADATA')
+            return False
+
+    return True
+
+def fit_dm_fieldmodel(header, ccds, _catalog, check_header_cards=False):
+
+    if check_header_cards:
+        good = _check_header_cards(header)
+        if not good:
+            return None
+
     t0 = time.time()
     
     fm = FieldModel()

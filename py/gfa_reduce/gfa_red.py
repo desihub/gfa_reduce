@@ -221,7 +221,8 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
     # desimeter fieldmodel if applicable
     if (not skip_astrometry) and (fieldmodel or return_fieldmodel):
         # should probably log the timing of this step
-        fm = dm.fit_dm_fieldmodel(exp.exp_header, ccds, catalog)
+        fm = dm.fit_dm_fieldmodel(exp.exp_header, ccds, catalog,
+                                  check_header_cards=(cube_index is not None))
         if not return_fieldmodel:
             io.write_dm_fieldmodel(fm, outdir, fname_in, cube_index=cube_index)
     
