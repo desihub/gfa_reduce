@@ -735,8 +735,11 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
 
     tab['psf_centroid_failed'] =  [(exp.images[extname].psf.psf_centroiding_failed if exp.images[extname].psf is not None else 0) for extname in tab['camera']]
 
-    tab['radprof_fwhm_asec'] =  [(exp.images[extname].psf.radprof_fwhm_asec if exp.images[extname].psf is not None else 0) for extname in tab['camera']]
-    
+    tab['radprof_fwhm_asec'] =  [(exp.images[extname].psf.radprof_fwhm_asec if exp.images[extname].psf is not None else np.nan) for extname in tab['camera']]
+
+    # is 0 the best placeholder value here when no PSF exists?
+    tab['psf_centroiding_flag'] =  [(exp.images[extname].psf.psf_centroiding_flag if exp.images[extname].psf is not None else 0) for extname in tab['camera']]
+
     for i, extname in enumerate(tab['camera']):
         racen, deccen = ccd_center_radec(exp.images[extname].wcs)
         tab['racen'][i] = racen

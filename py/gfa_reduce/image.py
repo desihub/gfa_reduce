@@ -40,6 +40,8 @@ class PSF:
         self.nstars = cube.shape[2]
         self.cube = cube # maybe get rid of this eventually to save memory
 
+        self.psf_centroiding_flag = 0
+
         self.cbox = 7
         self.flux_weighted_centroid()
 
@@ -75,6 +77,7 @@ class PSF:
         if (np.abs(self.xcen_flux_weighted - (self.sidelen // 2)) > 1) or (np.abs(self.ycen_flux_weighted - (self.sidelen // 2)) > 1):
             self.xcen_flux_weighted = float(self.sidelen // 2)
             self.ycen_flux_weighted = float(self.sidelen // 2)
+            self.psf_centroiding_flag = 1
 
         self.fit_moffat_fwhm()
 
