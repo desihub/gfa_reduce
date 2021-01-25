@@ -765,6 +765,12 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     # is 0 the best placeholder value here when no PSF exists?
     tab['psf_centroiding_flag'] =  [(exp.images[extname].psf.psf_centroiding_flag if exp.images[extname].psf is not None else 0) for extname in tab['camera']]
 
+    tab['psf_asymmetry_ratio'] = [(exp.images[extname].psf.psf_asymmetry_ratio if exp.images[extname].psf is not None else np.nan) for extname in tab['camera']]
+
+    tab['psf_asymmetry_numerator'] = [(exp.images[extname].psf.psf_asymmetry_numerator if exp.images[extname].psf is not None else np.nan) for extname in tab['camera']]
+
+    tab['psf_asymmetry_denominator'] =  [(exp.images[extname].psf.psf_asymmetry_denominator if exp.images[extname].psf is not None else np.nan) for extname in tab['camera']]
+    
     radprof_ccds_table(tab, exp)
 
     for i, extname in enumerate(tab['camera']):

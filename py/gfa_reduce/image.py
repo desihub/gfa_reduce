@@ -93,6 +93,13 @@ class PSF:
         self.profile_radius_pix = radii
         self.radial_profile = profile
 
+        asymmetry_ratio, asymmetry_numerator, asymmetry_denominator = util._asymmetry_score(self.psf_image,
+                                                                                            _xcen=self.xcen_flux_weighted,
+                                                                                            _ycen=self.ycen_flux_weighted)
+        self.psf_asymmetry_ratio = np.float32(asymmetry_ratio)
+        self.psf_asymmetry_numerator = np.float32(asymmetry_numerator)
+        self.psf_asymmetry_denominator = np.float32(asymmetry_denominator)
+
     def psf_image_header(self, hdu):
         
          hdu.header['EXTNAME'] = self.extname

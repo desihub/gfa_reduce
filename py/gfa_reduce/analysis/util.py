@@ -819,3 +819,46 @@ def _patch_guider_mjd_obs(exp):
     else:
         print('PATCHING MISSING GUIDER HEADER MJD-OBS')
         exp.exp_header['MJD-OBS'] = list(exp.bintables.values())[0][0]['MJD-OBS']
+
+def _asymmetry_score(psf, _xcen=None, _ycen=None):
+
+    # could imagine adding sanity check requiring PSF to be large
+    # enough to accommodate 'boxhalf'
+    sz = psf.shape
+
+    assert(len(sz) == 2)
+    assert(sz[0] == sz[1])
+    assert((sz[0] % 2) == 1)
+
+    half = sz[0] // 2
+
+    boxhalf = 5
+
+    if _xcen is None:
+        _xcen = float(half)
+    if _ycen is None:
+        _ycen = float(half)
+
+    xcen = int(np.round(_xcen))
+    ycen = int(np.round(_ycen))
+
+    xmin = xcen - boxhalf
+    xmax = xcen + boxhalf
+    ymin = ycen - boxhalf
+    ymax = ycen + boxhalf
+
+    if (xmin < 0) or (ymin < 0) or (xmax > sz[0]) or (ymax > sz[1]):
+        return np.nan, np.nan, np.nan
+
+    stamp = psf[ymin:ymax, xmin:xmax]
+
+    denominator = np.sum(stamp) # note no abs value here !
+
+    numerator1 = np.sum(np.abs(stamp - np.rot90(stamp, k=1)))
+    numerator3 = np.sum(np.abs(stamp - np.rot90(stamp, k=3)))
+
+    numerator = (numerator1 + numerator3)/2
+
+    asymmetry_ratio = numerator/denominator
+
+    return asymmetry_ratio, numerator, denominator
