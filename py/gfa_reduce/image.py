@@ -13,6 +13,8 @@ import scipy.ndimage as ndimage
 import gfa_reduce.analysis.util as util
 from gfa_reduce.analysis.djs_photcen import djs_photcen
 import os
+from gfa_reduce.analysis.radprof import _atv_radplotf
+from gfa_reduce.analysis.splinefwhm import _atv_splinefwhm
 
 class PSF:
     def __init__(self, cube, im_header, cube_index):
@@ -75,6 +77,9 @@ class PSF:
             self.ycen_flux_weighted = float(self.sidelen // 2)
 
         self.fit_moffat_fwhm()
+
+        radii, profile = _atv_radplotf(self.psf_image, self.xcen_flux_weighted, self.ycen_flux_weighted)
+        self.radprof_fwhm_asec = _atv_splinefwhm(radii, profile)*0.205
 
     def psf_image_header(self, hdu):
         
