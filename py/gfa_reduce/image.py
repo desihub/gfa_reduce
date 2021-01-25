@@ -100,6 +100,9 @@ class PSF:
         self.psf_asymmetry_numerator = np.float32(asymmetry_numerator)
         self.psf_asymmetry_denominator = np.float32(asymmetry_denominator)
 
+        # for my DIQ studies I used a cut on this quantity
+        self.psf_total_flux = np.float32(np.sum(self.psf_image))
+
     def psf_image_header(self, hdu):
         
          hdu.header['EXTNAME'] = self.extname
