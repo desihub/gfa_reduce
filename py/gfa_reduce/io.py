@@ -588,6 +588,31 @@ def astrom_ccds_table(tab, exp):
     tab['latpole'] = latpoles
     tab['pv2'] = pv2s
 
+
+def radprof_ccds_table(tab, exp):
+    # package PSF radial profiles into CCDs table
+    nrows = len(tab)
+
+    for i, t in enumerate(tab):
+        psf = exp.images[t['extname']].psf
+
+        if psf is None:
+            continue
+
+        radii = psf.profile_radius_pix
+        profile = psf.radial_profile
+
+        if i == 0:
+            nrad = len(radii)
+            all_radii = np.zeros((nrows, nrad), dtype='float32')
+            all_profiles = np.zeros((nrows, nrad), dtype='float32')
+
+        all_radii[i, :] = radii
+        all_profiles[i, :] = profile
+
+    tab['profile_radius_pix'] = all_radii
+    tab['psf_radial_profile'] = all_profiles
+
 def dark_current_ccds_table(tab, exp):
     fname_master_dark = []
     nrows = len(tab)
@@ -739,6 +764,8 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
 
     # is 0 the best placeholder value here when no PSF exists?
     tab['psf_centroiding_flag'] =  [(exp.images[extname].psf.psf_centroiding_flag if exp.images[extname].psf is not None else 0) for extname in tab['camera']]
+
+    radprof_ccds_table(tab, exp)
 
     for i, extname in enumerate(tab['camera']):
         racen, deccen = ccd_center_radec(exp.images[extname].wcs)

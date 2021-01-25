@@ -27,6 +27,12 @@ class PSF:
 
         self.sidelen = sh[0]
 
+        # number of radius values for radial profile
+        self.nrad = (self.sidelen // 2) + 1 # not clear that this is 100% equivalent to what's in radprof.py
+
+        self.profile_radius_pix = np.zeros(self.nrad, dtype='float32')
+        self.radial_profile = np.zeros(self.nrad, dtype='float32')
+
         self.im_header = im_header # header of the full-frame single-camera
                                    # GFA image
 
@@ -83,6 +89,9 @@ class PSF:
 
         radii, profile = _atv_radplotf(self.psf_image, self.xcen_flux_weighted, self.ycen_flux_weighted)
         self.radprof_fwhm_asec = _atv_splinefwhm(radii, profile)*0.205
+
+        self.profile_radius_pix = radii
+        self.radial_profile = profile
 
     def psf_image_header(self, hdu):
         
