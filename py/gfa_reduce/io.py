@@ -773,6 +773,9 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
 
     tab['transparency'] = [util.transparency_from_zeropoint(tab[i]['zp_adu_per_s'], tab[i]['airmass_per_gfa'], tab[i]['camera']) for i in range(len(tab))]
 
+    par = common.gfa_misc_params()
+    tab['kterm'] = np.float32(par['kterm'])
+
     tab['det_sn_thresh'] = det_sn_thresh
     
     prescan_overscan_ccds_table(tab, exp)
