@@ -593,22 +593,20 @@ def radprof_ccds_table(tab, exp):
     # package PSF radial profiles into CCDs table
     nrows = len(tab)
 
+    # number of radial profile radius bins
+    nrad = 26 # special number -- eventually handle this better
+
+    all_radii = np.zeros((nrows, nrad), dtype='float32')
+    all_profiles = np.zeros((nrows, nrad), dtype='float32')
+
     for i, t in enumerate(tab):
         psf = exp.images[t['extname']].psf
 
         if psf is None:
             continue
 
-        radii = psf.profile_radius_pix
-        profile = psf.radial_profile
-
-        if i == 0:
-            nrad = len(radii)
-            all_radii = np.zeros((nrows, nrad), dtype='float32')
-            all_profiles = np.zeros((nrows, nrad), dtype='float32')
-
-        all_radii[i, :] = radii
-        all_profiles[i, :] = profile
+        all_radii[i, :] = psf.profile_radius_pix
+        all_profiles[i, :] = psf.radial_profile
 
     tab['profile_radius_pix'] = all_radii
     tab['psf_radial_profile'] = all_profiles
@@ -765,13 +763,13 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     # is 0 the best placeholder value here when no PSF exists?
     tab['psf_centroiding_flag'] =  [(exp.images[extname].psf.psf_centroiding_flag if exp.images[extname].psf is not None else 0) for extname in tab['camera']]
 
-    tab['psf_asymmetry_ratio'] = [(exp.images[extname].psf.psf_asymmetry_ratio if exp.images[extname].psf is not None else np.nan) for extname in tab['camera']]
+    tab['psf_asymmetry_ratio'] = [(exp.images[extname].psf.psf_asymmetry_ratio if exp.images[extname].psf is not None else np.float32(np.nan)) for extname in tab['camera']]
 
-    tab['psf_asymmetry_numerator'] = [(exp.images[extname].psf.psf_asymmetry_numerator if exp.images[extname].psf is not None else np.nan) for extname in tab['camera']]
+    tab['psf_asymmetry_numerator'] = [(exp.images[extname].psf.psf_asymmetry_numerator if exp.images[extname].psf is not None else np.float32(np.nan)) for extname in tab['camera']]
 
-    tab['psf_asymmetry_denominator'] =  [(exp.images[extname].psf.psf_asymmetry_denominator if exp.images[extname].psf is not None else np.nan) for extname in tab['camera']]
+    tab['psf_asymmetry_denominator'] =  [(exp.images[extname].psf.psf_asymmetry_denominator if exp.images[extname].psf is not None else np.float32(np.nan)) for extname in tab['camera']]
 
-    tab['psf_total_flux'] =  [(exp.images[extname].psf.psf_total_flux if exp.images[extname].psf is not None else np.nan) for extname in tab['camera']]
+    tab['psf_total_flux'] =  [(exp.images[extname].psf.psf_total_flux if exp.images[extname].psf is not None else np.float32(np.nan)) for extname in tab['camera']]
 
     radprof_ccds_table(tab, exp)
 
