@@ -43,7 +43,7 @@ def _concat(night='20201214'):
 
     return result
 
-def _concat_many_nights(night_min='20201214', night_max='20210203'):
+def _concat_many_nights(night_min='20201214', night_max='99999999'):
 
     nights = _nights_list(night_min, night_max)
 
