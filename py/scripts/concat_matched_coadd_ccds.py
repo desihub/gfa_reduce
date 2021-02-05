@@ -105,4 +105,16 @@ def _concat_many_nights(night_min='20201214', night_max='99999999'):
     med = cube_index_median(result)
     _med = cube_index_median(result, extra_cuts=True)
     
-    return result
+    return result, med, _med
+
+def _write_many_nights(night_min='20201214', night_max='99999999'):
+
+    result, med, _med = _concat_many_nights(night_min=night_min,
+                                            night_max=night_max)
+    
+    hdul = fits.HDUList(hdus=[fits.PrimaryHDU(),
+                              fits.BinTableHDU(data=result),
+                              fits.BinTableHDU(data=med),
+                              fits.BinTableHDU(data=_med)])
+
+    hdul.writeto('summary.fits')
