@@ -3,6 +3,7 @@ from astropy.table import Table, vstack, hstack
 import glob
 import numpy as np
 import os
+import argparse
 
 basedir = '/global/cfs/cdirs/desi/users/ameisner/GFA/reduced/v0022_matched'
 
@@ -62,7 +63,7 @@ def _nights_list(night_min, night_max, basedir=basedir):
     nights = [os.path.split(d)[-1] for d in dirs]
     return nights
 
-def _concat(night='20201214'):
+def _concat(night='20201214', basedir=basedir):
 
     pattern = basedir + '/' + night + '/????????/*ccds*.fits'
 
@@ -87,13 +88,14 @@ def _concat(night='20201214'):
 
     return result
 
-def _concat_many_nights(night_min='20201214', night_max='99999999'):
+def _concat_many_nights(night_min='20201214', night_max='99999999',
+                        basedir=basedir):
 
-    nights = _nights_list(night_min, night_max)
+    nights = _nights_list(night_min, night_max, basedir=basedir)
 
     tables = []
     for night in nights:
-        table = _concat(night=night)
+        table = _concat(night=night, basedir=basedir)
         tables.append(table)
 
     result = vstack(tables)
@@ -107,14 +109,37 @@ def _concat_many_nights(night_min='20201214', night_max='99999999'):
     
     return result, med, _med
 
-def _write_many_nights(night_min='20201214', night_max='99999999'):
+def _write_many_nights(night_min='20201214', night_max='99999999',
+                       basedir=basedir):
 
     result, med, _med = _concat_many_nights(night_min=night_min,
-                                            night_max=night_max)
+                                            night_max=night_max,
+                                            basedir=basedir)
     
     hdul = fits.HDUList(hdus=[fits.PrimaryHDU(),
                               fits.BinTableHDU(data=result),
                               fits.BinTableHDU(data=med),
                               fits.BinTableHDU(data=_med)])
 
-    hdul.writeto('summary.fits')
+    night = str(np.max(result['NIGHT']))
+    outname = 'offline_matched_coadd_ccds_SV1-thru_' + night + '.fits'
+    hdul.writeto(outname)
+
+if __name__=="__main__":
+    descr = 'gather gfa_reduce _ccds table outputs'
+    parser = argparse.ArgumentParser(description=descr)
+
+    parser.add_argument('--basedir', default=basedir, type=str,
+                        help='input directory')
+
+    parser.add_argument('--night_min', default='20201214', type=str,
+                        help='first observing night')
+
+    parser.add_argument('--night_max', default='99999999', type=str,
+                        help='last observing night')
+
+    args = parser.parse_args()
+
+    _write_many_nights(night_min=args.night_min, night_max=args.night_max,
+                       basedir=args.basedir)
+
