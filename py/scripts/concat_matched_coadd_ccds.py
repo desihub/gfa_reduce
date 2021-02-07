@@ -21,16 +21,11 @@ def cube_index_median(tab, extra_cuts=False):
         bad = np.logical_or(bad, tab['CONTRAST'] < contrast_thresh)
         bad = np.logical_or(bad, tab['N_SOURCES_FOR_PSF'] < 3)
 
-
-    print(len(tab))
     tab = tab[np.logical_not(bad)]
-    print(len(tab))
     
     _id = np.array([str(tab[i]['EXPID']).zfill(8) + str(tab[i]['CUBE_INDEX']).zfill(5) for i in range(len(tab))])
 
     ids_u = np.unique(_id)
-
-    print(len(ids_u), ' !!!!!!')
 
     rows = []
     for id_u in ids_u:
@@ -46,7 +41,6 @@ def cube_index_median(tab, extra_cuts=False):
 
         rows.append(row)
 
-    print(len(rows))
     result = vstack(rows)
 
     return result
@@ -91,6 +85,8 @@ def _concat(night='20201214', basedir=basedir):
 def _concat_many_nights(night_min='20201214', night_max='99999999',
                         basedir=basedir):
 
+    print('reading in _ccds tables...')
+
     nights = _nights_list(night_min, night_max, basedir=basedir)
 
     tables = []
@@ -104,7 +100,9 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
 
     result = result[sind]
 
+    print('assembling per-frame median extension with minimal quality cuts...')
     med = cube_index_median(result)
+    print('assembling per-frame median extension with additional quality cuts...')
     _med = cube_index_median(result, extra_cuts=True)
     
     return result, med, _med
@@ -123,7 +121,9 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
 
     night = str(np.max(result['NIGHT']))
     outname = 'offline_matched_coadd_ccds_SV1-thru_' + night + '.fits'
+    print('attempting to write multi-extension FITS output to ' + outname)
     hdul.writeto(outname)
+    print('done')
 
 if __name__=="__main__":
     descr = 'gather gfa_reduce _ccds table outputs'
