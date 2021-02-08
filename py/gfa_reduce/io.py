@@ -28,11 +28,11 @@ def load_image_from_hdu(hdu, verbose=True, cube_index=None, store_detmap=False,
 
     # hack for PlateMaker acquisition image file format
     if 'SKYRA' not in header:
-        header['SKYRA'] = exp_header['SKYRA']
-        header['SKYDEC'] = exp_header['SKYDEC']
-        header['EXPTIME'] = exp_header['EXPTIME']
+        header['SKYRA'] = exp_header['SKYRA'] if 'SKYRA' in exp_header else exp_header['REQRA']
+        header['SKYDEC'] = exp_header['SKYDEC'] if 'SKYDEC' in exp_header else exp_header['REQDEC']
+        header['EXPTIME'] = exp_header['EXPTIME'] if 'EXPTIME' in exp_header else header['EXPTIME']
         header['REQTIME'] = exp_header['REQTIME']
-        header['MJD-OBS'] = exp_header['MJD-OBS']
+        header['MJD-OBS'] = exp_header['MJD-OBS'] if 'MJD-OBS' in exp_header else header['MJD-OBS']
 
     if 'EXPID' not in header:
         header['EXPID'] = exp_header['EXPID']
@@ -43,6 +43,15 @@ def load_image_from_hdu(hdu, verbose=True, cube_index=None, store_detmap=False,
     if ('SKYRA' in exp_header) and ('SKYDEC' in exp_header):
         header['SKYRA'] = exp_header['SKYRA'] if exp_header['SKYRA'] is not None else exp_header['REQRA']
         header['SKYDEC'] = exp_header['SKYDEC'] if exp_header['SKYDEC'] is not None else exp_header['REQDEC']
+
+    # 20210106 -0000.fits.fz acquisition images
+    if 'SKYRA' not in exp_header:
+        exp_header['SKYRA'] = header['SKYRA']
+        exp_header['SKYDEC'] = header['SKYDEC']
+
+    # 20210106 -0000.fits.fz acquisition images
+    if ('MJD-OBS' in header) and ('MJD-OBS' not in exp_header):
+        exp_header['MJD-OBS'] = header['MJD-OBS']
 
     return GFA_image(hdu.data, header, cube_index=cube_index,
                      store_detmap=store_detmap,
@@ -723,8 +732,17 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     tab['focus'] = exp.try_retrieve_header_card('FOCUS', placeholder='')
 
     tab['exptime'] = [exp.images[extname].try_retrieve_meta_keyword('EXPTIME', placeholder=np.nan) for extname in tab['camera']]
-    
-    tab['cube_index'] = np.nan if cube_index is None else int(cube_index)
+
+    # hack for acquisition images like guide-00074954-0000.fits.fz
+    # to make sure their _ccds table ends up listing cube_index 0
+    # rather than NaN
+
+    is_0000_acq_file = proc_obj.fname_in.find('-0000.fits.fz') is not -1
+
+    if is_0000_acq_file:
+        tab['cube_index'] = 0
+    else:
+        tab['cube_index'] = np.nan if cube_index is None else int(cube_index)
 
     if cube_index == -1:
         tab['coadd_index_start'] = [exp.images[extname].coadd_index_range[0] for extname in tab['camera']]
