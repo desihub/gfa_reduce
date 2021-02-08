@@ -737,7 +737,7 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     # to make sure their _ccds table ends up listing cube_index 0
     # rather than NaN
 
-    is_0000_acq_file = proc_obj.fname_in.find('-0000.fits.fz') is not -1
+    is_0000_acq_file = proc_obj.fname_in.find('-0000.fits.fz') != -1
 
     if is_0000_acq_file:
         tab['cube_index'] = 0
