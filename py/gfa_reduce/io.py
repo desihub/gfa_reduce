@@ -719,6 +719,13 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     tab['moonra'] = exp.try_retrieve_header_card('MOONRA', placeholder=np.nan)
     tab['moondec'] = exp.try_retrieve_header_card('MOONDEC', placeholder=np.nan)
 
+    if np.isnan(tab['moonra'][0]):
+        tab['moonra'] = util.interp_ephemeris(tab['mjd'][0], eph=eph,
+                                              colname='MOONRA')
+    if np.isnan(tab['moondec'][0]):
+        tab['moondec'] = util.interp_ephemeris(tab['mjd'][0], eph=eph,
+                                               colname='MOONDEC')
+
     tab['moon_zd_deg'] = util._zenith_distance(tab['moonra'][0],
                                                tab['moondec'][0],
                                                tab['lst_deg'][0])

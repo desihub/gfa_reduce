@@ -660,7 +660,7 @@ def interp_ephemeris(mjd, eph=None, colname='LST_DEG'):
     if (mjd is None) or (mjd == 0) or (np.isnan(mjd)):
         return np.nan
 
-    assert(colname in ['LST_DEG', 'MPHASE'])
+    assert(colname in ['LST_DEG', 'MPHASE', 'MOONRA', 'MOONDEC'])
 
     if eph is None:
         eph = load_lst()
@@ -681,7 +681,7 @@ def interp_ephemeris(mjd, eph=None, colname='LST_DEG'):
     val_upper = eph[colname][ind_upper]
     val_lower = eph[colname][ind_lower]
 
-    if colname == 'LST_DEG':
+    if colname in ['LST_DEG', 'MOONRA']:
         if (val_lower > val_upper):
             val_lower -= 360.0
 
@@ -689,7 +689,7 @@ def interp_ephemeris(mjd, eph=None, colname='LST_DEG'):
     
     # bound to be within 0 -> 360
 
-    if colname == 'LST_DEG':
+    if colname in ['LST_DEG', 'MOONRA']:
         assert(result < 360)
 
         if (result < 0):
