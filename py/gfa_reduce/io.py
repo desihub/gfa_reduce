@@ -701,7 +701,7 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
 
     eph = util.load_lst()
     tab['lst_deg'] = [util.interp_ephemeris(t['mjd'], eph=eph) for t in tab]
-    tab['moon_illumination'] = [util.interp_ephemeris(t['mjd'], eph=eph, mphase=True) for t in tab]
+    tab['moon_illumination'] = [util.interp_ephemeris(t['mjd'], eph=eph, colname='MPHASE') for t in tab]
 
     tab['program'] = [str(exp.images[extname].try_retrieve_meta_keyword('PROGRAM', placeholder='')) for extname in tab['camera']]
 

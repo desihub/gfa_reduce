@@ -651,7 +651,7 @@ def load_lst():
 
     return eph
 
-def interp_ephemeris(mjd, eph=None, mphase=False):
+def interp_ephemeris(mjd, eph=None, colname='LST_DEG'):
 
     # for now assume that mjd is a scalar, can deal with vectorization later..
 
@@ -659,7 +659,9 @@ def interp_ephemeris(mjd, eph=None, mphase=False):
     
     if (mjd is None) or (mjd == 0) or (np.isnan(mjd)):
         return np.nan
-        
+
+    assert(colname in ['LST_DEG', 'MPHASE'])
+
     if eph is None:
         eph = load_lst()
 
@@ -676,11 +678,10 @@ def interp_ephemeris(mjd, eph=None, mphase=False):
     assert(mjd_upper >= mjd)
     assert(mjd_lower <= mjd)
 
-    colname = 'MPHASE' if mphase else 'LST_DEG'
     val_upper = eph[colname][ind_upper]
     val_lower = eph[colname][ind_lower]
 
-    if not mphase:
+    if colname == 'LST_DEG':
         if (val_lower > val_upper):
             val_lower -= 360.0
 
@@ -688,7 +689,7 @@ def interp_ephemeris(mjd, eph=None, mphase=False):
     
     # bound to be within 0 -> 360
 
-    if not mphase:
+    if colname == 'LST_DEG':
         assert(result < 360)
 
         if (result < 0):
