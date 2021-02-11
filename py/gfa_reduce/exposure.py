@@ -11,7 +11,7 @@ class GFA_exposure:
     """Object encapsulating the contents of a single GFA exposure"""
 
     def __init__(self, image_list, exp_header=None, bintables=None,
-                 max_cbox=31):
+                 max_cbox=31, pmgstars=None):
         # images is a dictionary of GFA_image objects
 
         par = common.gfa_misc_params()
@@ -39,6 +39,7 @@ class GFA_exposure:
         self.bintables = bintables
         self.max_cbox = max_cbox
         self.assign_max_cbox() # to the per-camera images ...
+        self.pmgstars = pmgstars
         
     def assign_one_image(self, image):
         extname = (image.header)['EXTNAME']

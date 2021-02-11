@@ -112,6 +112,16 @@ def realtime_raw_read(fname, delay=2.0, max_attempts=5):
 
     return hdul
 
+def _has_extension_name(hdul, extname='PMGSTARS'):
+
+    has_extname = False
+    for hdu in hdul:
+        if 'EXTNAME' in hdu.header:
+            if hdu.header['EXTNAME'].replace(' ', '') == extname:
+                has_extname = True
+
+    return has_extname
+
 def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
                   store_detmap=False, max_cbox=31, hdul=None, mjdrange=None):
 
@@ -168,6 +178,7 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
     assert(((not is_cube) and (cube_index is not None)) == False)
 
     bintables = None
+    pmgstars = None
     if is_cube:
         bintables = {}
         coadd_ind_ranges = []
@@ -177,6 +188,8 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
             # this will crash if the binary table extension is missing...
             bintables[extname_im] = hdul[extname_tab].data
             coadd_ind_ranges.append(util.coadd_cube_index_range(bintables[extname_im], cube_index, mjdrange))
+        if _has_extension_name(hdul, extname='PMGSTARS'):
+            pmgstars = hdul['PMGSTARS'].data
     else:
         coadd_ind_ranges = [None]*len(w_im)
             
@@ -188,7 +201,7 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
         return None
 
     exp = GFA_exposure(imlist, exp_header=exp_header, bintables=bintables,
-                       max_cbox=max_cbox)
+                       max_cbox=max_cbox, pmgstars=pmgstars)
 
     exp.set_bintable_rows()
 
@@ -871,6 +884,35 @@ def write_ccds_table(tab, outdir, proc_obj, cube_index=None):
 
     _atomic_write(tab, outname)
 
+def write_pmgstars(exp, outdir, fname_in, cube_index):
+
+    assert(cube_index is not None)
+
+    if exp.pmgstars is None:
+        return
+
+    assert(os.path.exists(outdir))
+
+    outname = os.path.join(outdir, os.path.basename(fname_in))
+
+    # get rid of any ".fz" or ".gz" present in input filename
+    outname = outname.replace('.fz', '')
+    outname = outname.replace('.gz', '')
+
+    assert(outname[-5:] == '.fits')
+
+    outname = outname.replace('.fits', '_pmgstars.fits')
+
+    outname = outname.replace('.fits',
+                              '-' + str(cube_index).zfill(5) + '.fits')
+    
+    assert(not os.path.exists(outname))
+
+    pmgstars = Table(exp.pmgstars)
+
+    print('Attempting to write PMGSTARS table to ' + outname)
+    _atomic_write(pmgstars, outname)
+    
 def write_psfs(exp, outdir, fname_in, cube_index=None, cubes=False):
 
     assert(os.path.exists(outdir))
