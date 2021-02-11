@@ -278,3 +278,34 @@ class GFA_exposure:
 
     def assign_input_filename(self, fname_in):
         self.fname_in = fname_in
+
+    def pmgstars_dq_flags(self):
+        # gather dq_flags for PMGSTARS table source positions
+
+        extnames = np.unique(self.pmgstars['GFA_LOC'])
+
+        dq_flags = np.zeros(len(self.pmgstars), dtype='uint8')
+
+        for extname in extnames:
+            mask = (self.pmgstars['GFA_LOC'] == extname)
+            dq_flags[mask] = util.get_dq_flags(self.pmgstars[mask],
+                                               self.images[extname].bitmask)
+
+        self.pmgstars['dq_flags'] = dq_flags
+
+    def pmgstars_forcedphot(self):
+        # driver for PMGSTARS forced photometry
+
+        x, y = util.row_col_to_xy(self.pmgstars)
+
+        self.pmgstars['xcentroid'] = x
+        self.pmgstars['ycentroid'] = y
+        self.pmgstars['min_edge_dist_pix'] = [util.min_edge_dist_pix(c[0], c[1]) for c in zip(x, y)]
+
+        # decide which stars to retain for the forced photometry analysis
+
+        self.pmgstars_dq_flags()
+        
+        good = (self.pmgstars['median_1_'] > 0) & (self.pmgstars['ang_sep_deg'] < 2.0/3600.0) & (self.pmgstars['min_edge_dist_pix'] >= 10) & (self.pmgstars['dq_flags'] == 0)
+
+        self.pmgstars['good'] = good.astype(int)

@@ -863,3 +863,25 @@ def _asymmetry_score(psf, _xcen=None, _ycen=None):
     asymmetry_ratio = numerator/denominator
 
     return asymmetry_ratio, numerator, denominator
+
+def row_col_to_xy(pmgstars):
+    # convert PMGSTARS table ROW and COL
+    # to (x, y) values under gfa_reduce's convention for pixel
+    # coordinate indices
+
+    x = pmgstars['COL'] - 0.5
+    y = pmgstars['ROW'] - 0.5
+
+    return x, y
+
+def get_dq_flags(tab, bitmask):
+
+    xmin = gfa_pixel_xmin(pix_center=True)
+    xmax = gfa_pixel_xmax(pix_center=True)
+    ymin = gfa_pixel_ymin(pix_center=True)
+    ymax = gfa_pixel_ymax(pix_center=True)
+
+    ixs = [int(min(max(np.round(t['xcentroid']), xmin), xmax)) for t in tab]
+    iys = [int(min(max(np.round(t['ycentroid']), ymin), ymax)) for t in tab]
+
+    return bitmask[iys, ixs].astype('uint8')

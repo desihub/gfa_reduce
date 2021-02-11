@@ -326,20 +326,9 @@ def refine_centroids(tab, image, bitmask, ivar_adu, sig_adu=None,
 def add_metadata_columns(tab, bitmask):
     # input table tab gets modified
 
-    min_edge_dist = [util.min_edge_dist_pix(c[0], c[1]) for c in zip(tab['xcentroid'], tab['ycentroid'])]
-    tab['min_edge_dist_pix'] = min_edge_dist
+    tab['min_edge_dist_pix'] = [util.min_edge_dist_pix(c[0], c[1]) for c in zip(tab['xcentroid'], tab['ycentroid'])]
 
-    # there's probably a scipy function for this but w/e
-
-    xmin = util.gfa_pixel_xmin(pix_center=True)
-    xmax = util.gfa_pixel_xmax(pix_center=True)
-    ymin = util.gfa_pixel_ymin(pix_center=True)
-    ymax = util.gfa_pixel_ymax(pix_center=True)
-
-    ixs = [int(min(max(np.round(t['xcentroid']), xmin), xmax)) for t in tab]
-    iys = [int(min(max(np.round(t['ycentroid']), ymin), ymax)) for t in tab]
-
-    tab['dq_flags'] = bitmask[iys, ixs].astype('uint8')
+    tab['dq_flags'] = util.get_dq_flags(tab, bitmask)
     tab['valid_astrom_calibrator'] = ((tab['min_edge_dist_pix'] > 5) & (tab['sig_major_pix'] > 1.0)) # 5 could use more tuning
 
 def get_source_list(image, bitmask, extname, ivar_adu, max_cbox=31,

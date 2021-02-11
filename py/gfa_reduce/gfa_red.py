@@ -183,6 +183,9 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
                                   sky_mags=do_sky_mag,
                                   minimal=minimal_ccds_metadata,
                                   mjdrange=mjdrange)
+
+    if pmgstars:
+        exp.pmgstars_forcedphot()
     
     if write_outputs:
 
