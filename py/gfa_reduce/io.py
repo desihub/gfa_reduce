@@ -189,7 +189,7 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
             bintables[extname_im] = hdul[extname_tab].data
             coadd_ind_ranges.append(util.coadd_cube_index_range(bintables[extname_im], cube_index, mjdrange))
         if _has_extension_name(hdul, extname='PMGSTARS'):
-            pmgstars = hdul['PMGSTARS'].data
+            pmgstars = Table(hdul['PMGSTARS'].data)
     else:
         coadd_ind_ranges = [None]*len(w_im)
             
@@ -407,13 +407,14 @@ def write_exposure_source_catalog(catalog, outdir, proc_obj, exp,
 
 # since this function doesn't do the writing of the PS1 cross-matches
 # it may belong somewhere else rather than in 'io'
-def get_ps1_matches(catalog):
+def get_ps1_matches(catalog, exp):
     # handle case of exposure with no retained sources
     if catalog is None:
         return None
 
     # intentionally not sending any MJD info when doing ps1 cross-match
-    ps1 = gaia.gaia_xmatch(catalog['ra'], catalog['dec'], ps1=True)
+    ps1, all_ps1 = gaia.gaia_xmatch(catalog['ra'], catalog['dec'], ps1=True,
+                                    return_external_cat=True)
 
     if ps1 is None:
         print('No PS1 matches available -- Dec may be too low??')
@@ -423,6 +424,15 @@ def get_ps1_matches(catalog):
     ps1.rename_column('dec', 'dec_ps1')
 
     ps1_matches = hstack([catalog, ps1])
+
+    if exp.pmgstars is not None:
+        ps1 = gaia.gaia_xmatch(exp.pmgstars['RA'], exp.pmgstars['DEC'],
+                               ps1=True, cached_external_cat=all_ps1)
+
+        ps1.rename_column('ra', 'ra_ps1')
+        ps1.rename_column('dec', 'dec_ps1')
+
+        exp.pmgstars = hstack([exp.pmgstars, ps1])
 
     return ps1_matches
     
@@ -908,7 +918,7 @@ def write_pmgstars(exp, outdir, fname_in, cube_index):
     
     assert(not os.path.exists(outname))
 
-    pmgstars = Table(exp.pmgstars)
+    pmgstars = exp.pmgstars
 
     print('Attempting to write PMGSTARS table to ' + outname)
     _atomic_write(pmgstars, outname)

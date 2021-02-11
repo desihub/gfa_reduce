@@ -164,7 +164,7 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
         if (not no_ps1_xmatch) and (par['ps1_env_var'] in os.environ):
             # probably should look into dec < -30 handling more at some point
             print('Attempting to perform PS1 cross-matching...')
-            ps1 = io.get_ps1_matches(catalog)
+            ps1 = io.get_ps1_matches(catalog, exp)
         else:
             ps1 = None
             

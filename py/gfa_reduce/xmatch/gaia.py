@@ -155,10 +155,14 @@ def read_gaia_cat(ra, dec, ps1=False, mjd=None):
             
     return result
 
-def gaia_xmatch(ra, dec, ps1=False, mjd=None, gfa_targets=None):
+def gaia_xmatch(ra, dec, ps1=False, mjd=None, gfa_targets=None,
+                return_external_cat=False, cached_external_cat=None):
 
     if gfa_targets is None:
-        gaia_cat = read_gaia_cat(ra, dec, ps1=ps1, mjd=mjd)
+        if cached_external_cat is None:
+            gaia_cat = read_gaia_cat(ra, dec, ps1=ps1, mjd=mjd)
+        else:
+            gaia_cat = cached_external_cat
     else:
         radec = fits.ColDefs([fits.Column(name='ra', format='D',
                                           array=gfa_targets['TARGET_RA']),
@@ -184,4 +188,7 @@ def gaia_xmatch(ra, dec, ps1=False, mjd=None, gfa_targets=None):
 
     gaia_matches['ang_sep_deg'] = ang_sep_deg
 
-    return gaia_matches
+    if not return_external_cat:
+        return gaia_matches
+    else:
+        return gaia_matches, gaia_cat
