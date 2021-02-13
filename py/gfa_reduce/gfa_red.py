@@ -184,6 +184,8 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
                                   minimal=minimal_ccds_metadata,
                                   mjdrange=mjdrange)
 
+    exp.ccds = ccds
+
     if pmgstars:
         exp.pmgstars_forcedphot()
     

@@ -40,7 +40,11 @@ class GFA_exposure:
         self.max_cbox = max_cbox
         self.assign_max_cbox() # to the per-camera images ...
         self.pmgstars = pmgstars
-        
+
+        # eventually may get assigned to be the _ccds summary table
+        # object for this exposure
+        self.ccds = None
+
     def assign_one_image(self, image):
         extname = (image.header)['EXTNAME']
         self.images[extname] = image
@@ -299,6 +303,8 @@ class GFA_exposure:
         x, y = util.row_col_to_xy(self.pmgstars)
 
         self.pmgstars['expid'] = self.exp_header['EXPID']
+        self.pmgstars['cube_index'] = self.ccds['cube_index'][0]
+        self.pmgstars['night'] = self.ccds['night'][0]
         self.pmgstars['xcentroid'] = x
         self.pmgstars['ycentroid'] = y
         self.pmgstars['min_edge_dist_pix'] = [util.min_edge_dist_pix(c[0], c[1]) for c in zip(x, y)]
