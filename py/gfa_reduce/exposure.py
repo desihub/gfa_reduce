@@ -298,6 +298,7 @@ class GFA_exposure:
 
         x, y = util.row_col_to_xy(self.pmgstars)
 
+        self.pmgstars['expid'] = self.exp_header['EXPID']
         self.pmgstars['xcentroid'] = x
         self.pmgstars['ycentroid'] = y
         self.pmgstars['min_edge_dist_pix'] = [util.min_edge_dist_pix(c[0], c[1]) for c in zip(x, y)]
