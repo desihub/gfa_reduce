@@ -351,3 +351,13 @@ class GFA_exposure:
         self.pmgstars_airmass_exptime()
 
         self.pmgstars_zp_clear()
+
+        r_ps1 = -2.5*np.log10(self.pmgstars['median_1_'])
+
+        self.pmgstars['r_mag_ps1_median'] = r_ps1
+
+        clear_total_flux_adu_pred = np.power(10.0, (self.pmgstars['zp_clear_adu_per_s'] - r_ps1)/2.5)*self.pmgstars['time_s_for_dark']
+
+        clear_total_flux_adu_pred[np.logical_not(good)] = np.nan
+
+        self.pmgstars['clear_total_flux_adu_pred'] = clear_total_flux_adu_pred
