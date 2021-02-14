@@ -40,7 +40,9 @@ def gfa_misc_params():
            'zp_filename' : 'dense_field_zeropoints-combined.all_cameras.fits',
            'ephem_filename' : 'gfa_ephemeris.fits',
            'kpno_lat_deg' : 31.9639671,
-           'exp_kernel_filename' : 'elg_exponential.fits'}
+           'exp_kernel_filename' : 'elg_exponential.fits',
+           'fracflux_nominal_pointsource' : 0.55970293,
+           'fracflux_nominal_elg' : 0.40354151}
 
     return par
 

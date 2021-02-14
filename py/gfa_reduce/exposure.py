@@ -361,3 +361,8 @@ class GFA_exposure:
         clear_total_flux_adu_pred[np.logical_not(good)] = np.nan
 
         self.pmgstars['clear_total_flux_adu_pred'] = clear_total_flux_adu_pred
+
+        par = common.gfa_misc_params()
+
+        self.pmgstars['fiber_flux_nominal_adu_pointsource'] = clear_total_flux_adu_pred*par['fracflux_nominal_pointsource']
+        self.pmgstars['fiber_flux_nominal_adu_elg'] = clear_total_flux_adu_pred*par['fracflux_nominal_elg']
