@@ -297,19 +297,22 @@ class GFA_exposure:
 
         self.pmgstars['dq_flags'] = dq_flags
 
-    def pmgstars_airmass(self):
+    def pmgstars_airmass_exptime(self):
         # add column for airmass to PMGSTARS table, where
         # there is a unique airmass value per GFA camera
 
         airmass_per_gfa = np.full(len(self.pmgstars), np.nan)
+        time_s_for_dark = np.full(len(self.pmgstars), np.nan)
 
         for row in self.ccds:
             mask = (self.pmgstars['GFA_LOC'] == row['extname'])
             if np.sum(mask) == 0:
                 continue
             airmass_per_gfa[mask] = row['airmass_per_gfa']
+            time_s_for_dark[mask] = row['time_s_for_dark']
 
         self.pmgstars['airmass_per_gfa'] = airmass_per_gfa
+        self.pmgstars['time_s_for_dark'] = time_s_for_dark
 
         assert(np.sum(np.isnan(self.pmgstars['airmass_per_gfa'])) == 0)
 
@@ -345,6 +348,6 @@ class GFA_exposure:
 
         self.pmgstars['good'] = good.astype(int)
 
-        self.pmgstars_airmass()
+        self.pmgstars_airmass_exptime()
 
         self.pmgstars_zp_clear()
