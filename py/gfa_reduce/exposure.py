@@ -313,6 +313,18 @@ class GFA_exposure:
 
         assert(np.sum(np.isnan(self.pmgstars['airmass_per_gfa'])) == 0)
 
+    def pmgstars_zp_clear(self):
+        # for each row of the PMGSTARS table, compute the
+        # zeropoint (1 ADU/second) under clear conditions for the
+        # relevant GFA camera's airmass
+
+        zp_clear_adu_per_s = np.full(len(self.pmgstars), np.nan)
+
+        for i, row in enumerate(self.pmgstars):
+            zp_clear_adu_per_s[i] = util.zp_photometric_at_airmass(row['GFA_LOC'], row['airmass_per_gfa'])
+
+        self.pmgstars['zp_clear_adu_per_s'] = zp_clear_adu_per_s
+
     def pmgstars_forcedphot(self):
         # driver for PMGSTARS forced photometry
 
@@ -334,3 +346,5 @@ class GFA_exposure:
         self.pmgstars['good'] = good.astype(int)
 
         self.pmgstars_airmass()
+
+        self.pmgstars_zp_clear()
