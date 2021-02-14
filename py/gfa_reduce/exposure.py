@@ -297,6 +297,22 @@ class GFA_exposure:
 
         self.pmgstars['dq_flags'] = dq_flags
 
+    def pmgstars_airmass(self):
+        # add column for airmass to PMGSTARS table, where
+        # there is a unique airmass value per GFA camera
+
+        airmass_per_gfa = np.full(len(self.pmgstars), np.nan)
+
+        for row in self.ccds:
+            mask = (self.pmgstars['GFA_LOC'] == row['extname'])
+            if np.sum(mask) == 0:
+                continue
+            airmass_per_gfa[mask] = row['airmass_per_gfa']
+
+        self.pmgstars['airmass_per_gfa'] = airmass_per_gfa
+
+        assert(np.sum(np.isnan(self.pmgstars['airmass_per_gfa'])) == 0)
+
     def pmgstars_forcedphot(self):
         # driver for PMGSTARS forced photometry
 
@@ -316,3 +332,5 @@ class GFA_exposure:
         good = (self.pmgstars['median_1_'] > 0) & (self.pmgstars['ang_sep_deg'] < 2.0/3600.0) & (self.pmgstars['min_edge_dist_pix'] >= 10) & (self.pmgstars['dq_flags'] == 0)
 
         self.pmgstars['good'] = good.astype(int)
+
+        self.pmgstars_airmass()
