@@ -408,5 +408,17 @@ class GFA_exposure:
         self.pmgstars['fiber_flux_adu_forced_elg'] = aper_fluxes_elg
 
         # then calculate the fiber-sized aperture throughput factors relative to nominal
-        self.pmgstars['fiberfac'] = self.pmgstars['fiber_flux_adu_forced']/self.pmgstars['fiber_flux_nominal_adu_pointsource']
-        self.pmgstars['fiberfac_elg'] = self.pmgstars['fiber_flux_adu_forced_elg']/self.pmgstars['fiber_flux_nominal_adu_elg']
+        fiberfac = np.array(self.pmgstars['fiber_flux_adu_forced']/self.pmgstars['fiber_flux_nominal_adu_pointsource'])
+        self.pmgstars['fiberfac'] = fiberfac
+
+        fiberfac_elg = np.array(self.pmgstars['fiber_flux_adu_forced_elg']/self.pmgstars['fiber_flux_nominal_adu_elg'])
+        self.pmgstars['fiberfac_elg'] = fiberfac_elg
+
+        # now augment the CCDs table with per-camera
+        # fiberfac, fiberfac_elg information
+
+        self.ccds['n_pmgstars_all'] = [int(np.sum(self.pmgstars['GFA_LOC'] == extname)) for extname in self.ccds['camera']]
+        self.ccds['n_pmgstars_retained'] = [int(np.sum((self.pmgstars['GFA_LOC'] == extname) & good)) for extname in self.ccds['camera']]
+
+        self.ccds['fiberfac'] = [np.nanmedian(fiberfac[(self.pmgstars['GFA_LOC'] == extname) & good]) for extname in self.ccds['camera']]
+        self.ccds['fiberfac_elg'] = [np.nanmedian(fiberfac_elg[(self.pmgstars['GFA_LOC'] == extname) & good]) for extname in self.ccds['camera']]
