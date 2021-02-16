@@ -14,6 +14,8 @@ import gfa_reduce.analysis.djs_maskinterp as djs_maskinterp
 from gfa_reduce.analysis.djs_photcen import _loop_djs_photcen
 import photutils
 import copy
+import os
+import astropy.io.fits as fits
 
 def slices_to_table(slices, detsn, extname):
     nslc = len(slices)
@@ -384,7 +386,7 @@ def get_source_list(image, bitmask, extname, ivar_adu, max_cbox=31,
     # when this is being run via multiprocessing
     return tab, detsn, all_detections, image
 
-def pmgstars_forced_phot(xcentroid, ycentroid, image):
+def pmgstars_forced_phot(xcentroid, ycentroid, image, elg=False):
 
     assert(len(xcentroid) > 0)
     assert(len(ycentroid) > 0)
@@ -393,6 +395,17 @@ def pmgstars_forced_phot(xcentroid, ycentroid, image):
     # get the fluxes
 
     print('Attempting to do forced aperture photometry')
+
+    if elg:
+        par = common.gfa_misc_params()
+
+        fname = os.path.join(os.environ[par['meta_env_var']],
+                             par['exp_kernel_filename'])
+
+        kern = fits.getdata(fname) # non-optimal to repeatedly read this...
+
+        image = ndimage.convolve(image, kern, mode='constant')
+
     positions = list(zip(xcentroid, ycentroid))
 
     radius = 3.567 # pixels

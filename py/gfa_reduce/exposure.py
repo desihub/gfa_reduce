@@ -388,6 +388,13 @@ class GFA_exposure:
 
             aper_fluxes[mask] = fluxes
 
+            fluxes_elg = phot.pmgstars_forced_phot(self.pmgstars[mask]['xcentroid'],
+                                                   self.pmgstars[mask]['ycentroid'],
+                                                   self.images[extname].image,
+                                                   elg=True)
+
+            aper_fluxes_elg[mask] = fluxes_elg
+
             # call phot.pmgstars_forced_phot, filling in aper_fluxes, aper_fluxes_elg
             # will there be a second call to phot.pmgstars_forced_phot
             # or will one call include both ELG-smoothed version and
