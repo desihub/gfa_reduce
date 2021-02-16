@@ -383,3 +383,37 @@ def get_source_list(image, bitmask, extname, ivar_adu, max_cbox=31,
     # and this modification won't persist into the GFA_image object
     # when this is being run via multiprocessing
     return tab, detsn, all_detections, image
+
+def pmgstars_forced_phot(xcentroid, ycentroid, image):
+
+    assert(len(xcentroid) > 0)
+    assert(len(ycentroid) > 0)
+
+    # create the apertures
+    # get the fluxes
+
+    print('Attempting to do forced aperture photometry')
+    positions = list(zip(xcentroid, ycentroid))
+
+    radius = 3.567 # pixels
+
+    apertures = CircularAperture(positions, r=radius)
+    annulus_apertures = CircularAnnulus(positions, r_in=60.0, r_out=65.0)
+    annulus_masks = annulus_apertures.to_mask(method='center')
+
+    bkg_median = []
+    for mask in annulus_masks:
+        annulus_data = mask.multiply(image)
+        annulus_data_1d = annulus_data[mask.data > 0]
+        # this sigma_clipped_stats call is actually the slow part !!
+        _, median_sigclip, std_bg = sigma_clipped_stats(annulus_data_1d)
+        bkg_median.append(median_sigclip)
+
+    bkg_median = np.array(bkg_median)
+    phot = aperture_photometry(image, apertures)
+
+    aper_bkg_tot = bkg_median*_get_area_from_ap(apertures[0])
+
+    aper_fluxes = np.array(phot['aperture_sum']) - aper_bkg_tot
+
+    return aper_fluxes

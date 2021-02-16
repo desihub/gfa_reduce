@@ -366,3 +366,40 @@ class GFA_exposure:
 
         self.pmgstars['fiber_flux_nominal_adu_pointsource'] = clear_total_flux_adu_pred*par['fracflux_nominal_pointsource']
         self.pmgstars['fiber_flux_nominal_adu_elg'] = clear_total_flux_adu_pred*par['fracflux_nominal_elg']
+
+        # these will be the forced photometry aperture fluxes in ADU
+        aper_fluxes = np.full(len(self.pmgstars), np.nan)
+        aper_fluxes_elg = np.full(len(self.pmgstars), np.nan)
+
+        # get list of extnames that will actually require
+        # forced aperture photometry (i.e. those with at least
+        # one PMGSTARS row that passes all quality cuts)
+        extnames = np.unique(self.pmgstars[good]['GFA_LOC'])
+
+        for extname in extnames:
+            mask = ((self.pmgstars['GFA_LOC'] == extname) & good)
+
+            assert(np.sum(mask) > 0)
+
+            # do i need to send in the dq_flags image here? don't think so...
+            fluxes = phot.pmgstars_forced_phot(self.pmgstars[mask]['xcentroid'],
+                                               self.pmgstars[mask]['ycentroid'],
+                                               self.images[extname].image)
+
+            aper_fluxes[mask] = fluxes
+
+            # call phot.pmgstars_forced_phot, filling in aper_fluxes, aper_fluxes_elg
+            # will there be a second call to phot.pmgstars_forced_phot
+            # or will one call include both ELG-smoothed version and
+            # non-smoothed version?
+            #    seems like it may be more efficient for one call to do
+            #    both
+            # what will be the inputs/outputs to phot.pmgstars_forced_phot ?
+            #    definitely need xcentroid, ycentroid - what about extname?
+
+        self.pmgstars['fiber_flux_adu_forced'] = aper_fluxes
+        self.pmgstars['fiber_flux_adu_forced_elg'] = aper_fluxes_elg
+
+        # then calculate the fiber-sized aperture throughput factors relative to nominal
+        self.pmgstars['fiberfac'] = self.pmgstars['fiber_flux_adu_forced']/self.pmgstars['fiber_flux_nominal_adu_pointsource']
+        self.pmgstars['fiberfac_elg'] = self.pmgstars['fiber_flux_adu_forced_elg']/self.pmgstars['fiber_flux_nominal_adu_elg']
