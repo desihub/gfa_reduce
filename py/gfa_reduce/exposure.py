@@ -267,6 +267,26 @@ class GFA_exposure:
             else:
                 image.bintable_row = self.bintables[extname][image.cube_index]
 
+    def purge_zero_exptime(self):
+        # last frame of a DESI sequence guider cube can apparently end
+        # up with exactly zero EXPTIME
+        # try to remove such cases from downstream processing
+        # an example is NIGHT = 20210218, EXPID = 76803, CUBE_INDEX = 137, EXTNAME = GUIDE3
+
+        extnames = list(self.images.keys())
+        for extname in extnames:
+            if self.images[extname].bintable_row is not None:
+                if 'EXPTIME' in self.images[extname].bintable_row.array.columns.names:
+                    if self.images[extname].bintable_row['EXPTIME'] == 0:
+                        print('DISCARDING ' + extname + ' BECAUSE IT HAS ZERO EXPOSURE TIME')
+                        del self.images[extname]
+                        if self.pmgstars is not None:
+                            self.pmgstars = self.pmgstars[np.where(self.pmgstars['GFA_LOC'] != extname)[0]]
+
+        if len(self.images) == 0:
+            print('ALL CAMERAS HAVE ZERO EXPOSURE TIME??')
+            assert(False)
+
     def try_retrieve_header_card(self, keyword, placeholder=None):
         if (keyword in self.exp_header.keys()) and (self.exp_header[keyword] is not None):
             return self.exp_header[keyword]

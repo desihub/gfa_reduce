@@ -205,6 +205,8 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
 
     exp.set_bintable_rows()
 
+    exp.purge_zero_exptime()
+
     # fake file name
     if not from_file:
         exp.assign_input_filename(fname)
@@ -410,6 +412,15 @@ def write_exposure_source_catalog(catalog, outdir, proc_obj, exp,
 def get_ps1_matches(catalog, exp):
     # handle case of exposure with no retained sources
     if catalog is None:
+        if exp.pmgstars is not None:
+            ps1 = gaia.gaia_xmatch(exp.pmgstars['RA'], exp.pmgstars['DEC'],
+                                   ps1=True)
+
+            ps1.rename_column('ra', 'ra_ps1')
+            ps1.rename_column('dec', 'dec_ps1')
+
+            exp.pmgstars = hstack([exp.pmgstars, ps1])
+
         return None
 
     # intentionally not sending any MJD info when doing ps1 cross-match
