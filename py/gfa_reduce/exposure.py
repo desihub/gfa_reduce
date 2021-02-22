@@ -276,7 +276,12 @@ class GFA_exposure:
         extnames = list(self.images.keys())
         for extname in extnames:
             if self.images[extname].bintable_row is not None:
-                if 'EXPTIME' in self.images[extname].bintable_row.array.columns.names:
+                if self.images[extname].cube_index == -1:
+                    has_exptime_column = 'EXPTIME' in self.images[extname].bintable_row.colnames
+                else:
+                    has_exptime_column = 'EXPTIME' in self.images[extname].bintable_row.array.columns.names
+
+                if has_exptime_column:
                     if self.images[extname].bintable_row['EXPTIME'] == 0:
                         print('DISCARDING ' + extname + ' BECAUSE IT HAS ZERO EXPOSURE TIME')
                         del self.images[extname]
@@ -349,6 +354,12 @@ class GFA_exposure:
         self.pmgstars['zp_clear_adu_per_s'] = zp_clear_adu_per_s
 
     def pmgstars_forcedphot(self):
+
+        # think this may only happen for junk test data taken during daytime?
+        # example is 76356 from observing night 20210217
+        if self.pmgstars is None:
+            return
+
         # driver for PMGSTARS forced photometry
 
         x, y = util.row_col_to_xy(self.pmgstars)
