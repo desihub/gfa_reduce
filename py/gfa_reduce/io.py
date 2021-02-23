@@ -867,6 +867,8 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
 
     par = common.gfa_misc_params()
     tab['kterm'] = np.float32(par['kterm'])
+    tab['fracflux_nominal_pointsource'] = np.float32(par['fracflux_nominal_pointsource'])
+    tab['fracflux_nominal_elg'] = np.float32(par['fracflux_nominal_elg'])
 
     tab['det_sn_thresh'] = det_sn_thresh
     
