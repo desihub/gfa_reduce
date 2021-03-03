@@ -38,7 +38,7 @@ def acquire_field(fname_in=None, gfa_targets=None, exp_data=None):
                skip_raw_imstats=True,
                dont_write_catalog=True, dont_write_ccds=True,
                return_fieldmodel=True, multiproc=True,
-               skip_aper_phot=True, det_sn_thresh=10.0, apply_flatfield=False,
+               skip_aper_phot=True, det_sn_thresh=10.0, apply_flatfield=True,
                search_rad_arcmin=1.5, do_sky_mag=False,
                gfa_targets=gfa_targets, exp_data=exp_data,
                minimal_ccds_metadata=True, skip_2d_gaussians=True)
