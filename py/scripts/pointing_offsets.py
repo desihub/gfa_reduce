@@ -20,8 +20,8 @@ def pointing_offsets(fm, fname_in):
 
     dra_true_asec = 3600.0*(target_ra - fm.ra)*np.cos(target_dec/(180.0/np.pi))
     ddec_true_asec = 3600.0*(target_dec - fm.dec)
-    print('RA POINTING OFFSET : ', dra_true_asec)
-    print('DEC POINTING OFFSET : ', ddec_true_asec)
+    print('RA POINTING OFFSET : ', '{:.2f}'.format(dra_true_asec), ' asec')
+    print('DEC POINTING OFFSET : ', '{:.2f}'.format(ddec_true_asec), ' asec')
 
 def _get_raw_filename(expid, night):
     # assumes file name of the form gfa-????????.fits.fz
