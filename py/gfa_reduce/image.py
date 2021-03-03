@@ -73,13 +73,21 @@ class PSF:
 
         self.elg_convolution()
 
-        _, elg_fiber_flux, __ = util._fiber_fracflux(self.smoothed_psf_image,
+        _, elg_fiber_flux, __ = util._fiber_fracflux(self.smoothed_psf_image_elg,
                                                      x_centroid=self.xcen_flux_weighted,
                                                      y_centroid=self.ycen_flux_weighted)
 
         # normalize FIBER_FRACFLUX_ELG based on the total PSF flux *before* convolving
         self.fiber_fracflux_elg = elg_fiber_flux/psf_tot_flux
 
+        self.bgs_convolution()
+
+        _, bgs_fiber_flux, __ = util._fiber_fracflux(self.smoothed_psf_image_bgs,
+                                                     x_centroid=self.xcen_flux_weighted,
+                                                     y_centroid=self.ycen_flux_weighted)
+
+        self.fiber_fracflux_bgs = bgs_fiber_flux/psf_tot_flux
+        
         if (np.abs(self.xcen_flux_weighted - (self.sidelen // 2)) > 1) or (np.abs(self.ycen_flux_weighted - (self.sidelen // 2)) > 1):
             self.xcen_flux_weighted = float(self.sidelen // 2)
             self.ycen_flux_weighted = float(self.sidelen // 2)
@@ -169,7 +177,19 @@ class PSF:
 
         smth = ndimage.convolve(self.psf_image, kern, mode='constant')
 
-        self.smoothed_psf_image = smth
+        self.smoothed_psf_image_elg = smth
+
+    def bgs_convolution(self):
+        par = common.gfa_misc_params()
+        fname = os.path.join(os.environ[par['meta_env_var']],
+                             par['devauc_kernel_filename'])
+
+        kern = fits.getdata(fname)
+
+        smth = ndimage.convolve(self.psf_image, kern, mode='constant')
+
+        self.smoothed_psf_image_bgs = smth
+        
 
 class Overscan:
     """Object to encapsulate single-camera worth of overscan and prescan"""

@@ -801,6 +801,8 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
 
     tab['fiber_fracflux_elg'] = [(exp.images[extname].psf.fiber_fracflux_elg if exp.images[extname].psf is not None else np.nan) for extname in tab['camera']]
 
+    tab['fiber_fracflux_bgs'] = [(exp.images[extname].psf.fiber_fracflux_bgs if exp.images[extname].psf is not None else np.nan) for extname in tab['camera']]
+
     tab['n_sources_for_psf'] = [(exp.images[extname].psf.nstars if exp.images[extname].psf is not None else 0) for extname in tab['camera']]
     
     # this pertains to aperture _3 which is 1.5 asec radius
@@ -869,6 +871,7 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     tab['kterm'] = np.float32(par['kterm'])
     tab['fracflux_nominal_pointsource'] = np.float32(par['fracflux_nominal_pointsource'])
     tab['fracflux_nominal_elg'] = np.float32(par['fracflux_nominal_elg'])
+    tab['fracflux_nominal_bgs'] = np.float32(par['fracflux_nominal_bgs'])
 
     tab['det_sn_thresh'] = det_sn_thresh
     
