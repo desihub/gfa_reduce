@@ -386,7 +386,8 @@ def get_source_list(image, bitmask, extname, ivar_adu, max_cbox=31,
     # when this is being run via multiprocessing
     return tab, detsn, all_detections, image
 
-def pmgstars_forced_phot(xcentroid, ycentroid, image, elg=False):
+def pmgstars_forced_phot(xcentroid, ycentroid, image, elg=False,
+                         bgs=False):
 
     assert(len(xcentroid) > 0)
     assert(len(ycentroid) > 0)
@@ -396,11 +397,16 @@ def pmgstars_forced_phot(xcentroid, ycentroid, image, elg=False):
 
     print('Attempting to do forced aperture photometry')
 
-    if elg:
+    # shouldn't happen...
+    assert(not (elg and bgs))
+
+    if elg or bgs:
         par = common.gfa_misc_params()
 
+        param = 'exp_kernel_filename' if elg else 'devauc_kernel_filename'
+
         fname = os.path.join(os.environ[par['meta_env_var']],
-                             par['exp_kernel_filename'])
+                             par[param])
 
         kern = fits.getdata(fname) # non-optimal to repeatedly read this...
 

@@ -397,10 +397,12 @@ class GFA_exposure:
 
         self.pmgstars['fiber_flux_nominal_adu_pointsource'] = clear_total_flux_adu_pred*par['fracflux_nominal_pointsource']
         self.pmgstars['fiber_flux_nominal_adu_elg'] = clear_total_flux_adu_pred*par['fracflux_nominal_elg']
+        self.pmgstars['fiber_flux_nominal_adu_bgs'] = clear_total_flux_adu_pred*par['fracflux_nominal_bgs']
 
         # these will be the forced photometry aperture fluxes in ADU
         aper_fluxes = np.full(len(self.pmgstars), np.nan)
         aper_fluxes_elg = np.full(len(self.pmgstars), np.nan)
+        aper_fluxes_bgs = np.full(len(self.pmgstars), np.nan)
 
         # get list of extnames that will actually require
         # forced aperture photometry (i.e. those with at least
@@ -424,7 +426,13 @@ class GFA_exposure:
                                                    self.images[extname].image,
                                                    elg=True)
 
+            fluxes_bgs = phot.pmgstars_forced_phot(self.pmgstars[mask]['xcentroid'],
+                                                   self.pmgstars[mask]['ycentroid'],
+                                                   self.images[extname].image,
+                                                   bgs=True)
+
             aper_fluxes_elg[mask] = fluxes_elg
+            aper_fluxes_bgs[mask] = fluxes_bgs
 
             # call phot.pmgstars_forced_phot, filling in aper_fluxes, aper_fluxes_elg
             # will there be a second call to phot.pmgstars_forced_phot
@@ -437,13 +445,17 @@ class GFA_exposure:
 
         self.pmgstars['fiber_flux_adu_forced'] = aper_fluxes
         self.pmgstars['fiber_flux_adu_forced_elg'] = aper_fluxes_elg
+        self.pmgstars['fiber_flux_adu_forced_bgs'] = aper_fluxes_bgs
 
         # then calculate the fiber-sized aperture throughput factors relative to nominal
         fiberfac = np.array(self.pmgstars['fiber_flux_adu_forced']/self.pmgstars['fiber_flux_nominal_adu_pointsource'])
         self.pmgstars['fiberfac'] = fiberfac
 
         fiberfac_elg = np.array(self.pmgstars['fiber_flux_adu_forced_elg']/self.pmgstars['fiber_flux_nominal_adu_elg'])
+        fiberfac_bgs = np.array(self.pmgstars['fiber_flux_adu_forced_bgs']/self.pmgstars['fiber_flux_nominal_adu_bgs'])
+
         self.pmgstars['fiberfac_elg'] = fiberfac_elg
+        self.pmgstars['fiberfac_bgs'] = fiberfac_bgs
 
         # now augment the CCDs table with per-camera
         # fiberfac, fiberfac_elg information
@@ -453,3 +465,4 @@ class GFA_exposure:
 
         self.ccds['fiberfac'] = [np.nanmedian(fiberfac[(self.pmgstars['GFA_LOC'] == extname) & good]) for extname in self.ccds['camera']]
         self.ccds['fiberfac_elg'] = [np.nanmedian(fiberfac_elg[(self.pmgstars['GFA_LOC'] == extname) & good]) for extname in self.ccds['camera']]
+        self.ccds['fiberfac_bgs'] = [np.nanmedian(fiberfac_bgs[(self.pmgstars['GFA_LOC'] == extname) & good]) for extname in self.ccds['camera']]
