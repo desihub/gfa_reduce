@@ -42,9 +42,9 @@ def gfa_misc_params():
            'kpno_lat_deg' : 31.9639671,
            'exp_kernel_filename' : 'elg_exponential.fits',
            'devauc_kernel_filename' : 'bgs_devauc.fits',
-           'fracflux_nominal_pointsource' : 0.55970293,
-           'fracflux_nominal_elg' : 0.40354151,
-           'fracflux_nominal_bgs' : 0.18546116}
+           'fracflux_nominal_pointsource' : 0.58176813,
+           'fracflux_nominal_elg' : 0.42423389,
+           'fracflux_nominal_bgs' : 0.19544029}
 
     return par
 

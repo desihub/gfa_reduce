@@ -414,7 +414,13 @@ def pmgstars_forced_phot(xcentroid, ycentroid, image, elg=False,
 
     positions = list(zip(xcentroid, ycentroid))
 
-    radius = 3.567 # pixels
+    # the 1.52/1.462 factor comes from David Schlegel's request
+    # to have gfa_reduce fiber flux fraction related quantities
+    # be referenced to a 1.52 asec diameter aperture, even though
+    # the angular diameter corresponding to a 107 um fiber at the
+    # GFA focal plane position is smaller (1.462 asec using GFA
+    # platescale geometric mean); see SurveySpeed wiki page for 1.52 value
+    radius = 3.567*(1.52/1.462) # pixels
 
     apertures = CircularAperture(positions, r=radius)
     annulus_apertures = CircularAnnulus(positions, r_in=60.0, r_out=65.0)
