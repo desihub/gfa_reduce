@@ -353,11 +353,23 @@ class GFA_exposure:
 
         self.pmgstars['zp_clear_adu_per_s'] = zp_clear_adu_per_s
 
+    def empty_pmgstars_ccds_columns(self):
+        # for the case when user specifes --pmgstars option
+        # but no PMGSTARS table exists, put these placeholder values
+        # into the _ccds table
+
+        self.ccds['n_pmgstars_all'] = 0
+        self.ccds['n_pmgstars_retained'] = 0
+        self.ccds['fiberfac'] = np.nan
+        self.ccds['fiberfac_elg'] = np.nan
+        self.ccds['fiberfac_bgs'] = np.nan
+
     def pmgstars_forcedphot(self):
 
         # think this may only happen for junk test data taken during daytime?
         # example is 76356 from observing night 20210217
         if self.pmgstars is None:
+            self.empty_pmgstars_ccds_columns()
             return
 
         # driver for PMGSTARS forced photometry
