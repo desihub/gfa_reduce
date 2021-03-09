@@ -25,7 +25,8 @@ def _spectro_list(night):
 
     return flist
 
-# this is the list of guide-????????.fits.fz files corresponding to a desi-????????.fits.fz spectro file
+# this is the list of guide-????????.fits.fz files corresponding to a
+# desi-????????.fits.fz spectro file
 def _guider_list(spectro_flist):
     
     flist_pred = [s.replace('desi-', 'guide-') for s in spectro_flist]
@@ -46,7 +47,8 @@ def _one_coadd_command(fname, night, out_basedir=out_basedir,
                        background=False, mjdrange=None, fieldmodel=False,
                        pmgstars=True):
 
-    # assume that if mjdrange is not None, then it will be a two element list [mjdmin, mjdmax]
+    # assume that if mjdrange is not None, then it will be a two element list
+    # [mjdmin, mjdmax]
 
     assert(os.path.exists(fname))
     assert(os.path.exists(out_basedir))
@@ -55,10 +57,12 @@ def _one_coadd_command(fname, night, out_basedir=out_basedir,
 
     outdir = os.path.join(out_basedir, night + '/' + str(expid).zfill(8))
 
-    cmd = 'python -u ' + gfa_red.__file__ + ' ' + fname + ' --outdir ' + outdir + ' --skip_image_outputs --cube_index -1 '
+    cmd = 'python -u ' + gfa_red.__file__ + ' ' + fname + ' --outdir ' + \
+          outdir + ' --skip_image_outputs --cube_index -1 '
 
     if mjdrange is not None:
-        _extra = '--mjdmin ' + str(mjdrange[0]) + ' --mjdmax ' + str(mjdrange[1]) + ' '
+        _extra = '--mjdmin ' + str(mjdrange[0]) + ' --mjdmax ' + \
+                 str(mjdrange[1]) + ' '
         cmd += _extra
 
     if fieldmodel:
@@ -89,7 +93,9 @@ def _all_coadd_commands(flist, night, out_basedir=out_basedir,
         else:
             mjdrange = None
 
-        cmd = _one_coadd_command(f, night, out_basedir=out_basedir, background=background, mjdrange=mjdrange, fieldmodel=fieldmodel, pmgstars=pmgstars)
+        cmd = _one_coadd_command(f, night, out_basedir=out_basedir,
+                                 background=background, mjdrange=mjdrange,
+                                 fieldmodel=fieldmodel, pmgstars=pmgstars)
         cmds.append(cmd)
 
     return cmds
@@ -101,7 +107,10 @@ def _commands(night='20201214', out_basedir=out_basedir, background=False,
 
     flist = _guider_list(flist_spectro)
 
-    cmds = _all_coadd_commands(flist, night, match_spectro_mjd=match_spectro_mjd, out_basedir=out_basedir, fieldmodel=fieldmodel, pmgstars=pmgstars)
+    cmds = _all_coadd_commands(flist, night,
+                               match_spectro_mjd=match_spectro_mjd,
+                               out_basedir=out_basedir, fieldmodel=fieldmodel,
+                               pmgstars=pmgstars)
 
     night_dir = os.path.join(out_basedir, night)
 
@@ -123,7 +132,9 @@ def _launch_scripts(night, chunksize=8, match_spectro_mjd=True,
         os.mkdir(out_basedir)
 
     # eventually propagate all keywords
-    cmds = _commands(night=night, match_spectro_mjd=match_spectro_mjd, out_basedir=out_basedir, fieldmodel=fieldmodel, pmgstars=pmgstars)
+    cmds = _commands(night=night, match_spectro_mjd=match_spectro_mjd,
+                     out_basedir=out_basedir, fieldmodel=fieldmodel,
+                     pmgstars=pmgstars)
 
     random.seed(99)
     random.shuffle(cmds)
