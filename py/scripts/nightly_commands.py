@@ -43,9 +43,9 @@ def _guider_list(spectro_flist):
 
     return result
 
-def _one_coadd_command(fname, night, out_basedir=out_basedir,
-                       background=False, mjdrange=None, fieldmodel=False,
-                       pmgstars=True, make_exp_outdir=True):
+def _one_command(fname, night, out_basedir=out_basedir,
+                 background=False, mjdrange=None, fieldmodel=False,
+                 pmgstars=True, make_exp_outdir=True):
 
     # assume that if mjdrange is not None, then it will be a two element list
     # [mjdmin, mjdmax]
@@ -78,12 +78,11 @@ def _one_coadd_command(fname, night, out_basedir=out_basedir,
 
     return cmd
 
-
-def _all_coadd_commands(flist, night, out_basedir=out_basedir,
+def _all_commands(flist, night, out_basedir=out_basedir,
                         background=False, match_spectro_mjd=True,
                         fieldmodel=False, pmgstars=True,
                         make_exp_outdirs=True):
-    # just loop over _one_coadd_command
+    # just loop over _one_command
 
     cmds = []
     for f in flist:
@@ -97,7 +96,7 @@ def _all_coadd_commands(flist, night, out_basedir=out_basedir,
         else:
             mjdrange = None
 
-        cmd = _one_coadd_command(f, night, out_basedir=out_basedir,
+        cmd = _one_command(f, night, out_basedir=out_basedir,
                                  background=background, mjdrange=mjdrange,
                                  fieldmodel=fieldmodel, pmgstars=pmgstars,
                                  make_exp_outdir=make_exp_outdirs)
@@ -120,7 +119,7 @@ def _commands(night='20201214', out_basedir=out_basedir, background=False,
               night_dir)
         os.mkdir(night_dir)
 
-    cmds = _all_coadd_commands(flist, night,
+    cmds = _all_commands(flist, night,
                                match_spectro_mjd=match_spectro_mjd,
                                out_basedir=out_basedir, fieldmodel=fieldmodel,
                                pmgstars=pmgstars,
