@@ -68,7 +68,7 @@ def _one_coadd_command(fname, night, out_basedir=out_basedir,
 
 
 def _all_coadd_commands(flist, night, out_basedir=out_basedir,
-                        background=False, match_spectro_mjd=False,
+                        background=False, match_spectro_mjd=True,
                         fieldmodel=True):
     # just loop over _one_coadd_command
 
@@ -90,7 +90,7 @@ def _all_coadd_commands(flist, night, out_basedir=out_basedir,
     return cmds
 
 def _commands(night='20201214', out_basedir=out_basedir, background=False,
-              match_spectro_mjd=False, fieldmodel=True):
+              match_spectro_mjd=True, fieldmodel=True):
 
     flist_spectro = _spectro_list(night)
 
@@ -107,7 +107,7 @@ def _commands(night='20201214', out_basedir=out_basedir, background=False,
 
     return cmds
 
-def _launch_scripts(night, chunksize=8, match_spectro_mjd=False,
+def _launch_scripts(night, chunksize=8, match_spectro_mjd=True,
                     out_basedir=out_basedir, fieldmodel=True):
 
     if not os.path.exists(out_basedir):
