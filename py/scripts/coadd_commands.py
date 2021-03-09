@@ -43,7 +43,8 @@ def _guider_list(spectro_flist):
     return result
 
 def _one_coadd_command(fname, night, out_basedir=out_basedir,
-                       background=False, mjdrange=None, fieldmodel=False):
+                       background=False, mjdrange=None, fieldmodel=False,
+                       pmgstars=True):
 
     # assume that if mjdrange is not None, then it will be a two element list [mjdmin, mjdmax]
 
@@ -63,6 +64,9 @@ def _one_coadd_command(fname, night, out_basedir=out_basedir,
     if fieldmodel:
         cmd += '--fieldmodel '
 
+    if pmgstars:
+        cmd += '--pmgstars '
+
     cmd += '&> coadd-' + str(expid).zfill(8) + '.log'
 
     return cmd
@@ -70,7 +74,7 @@ def _one_coadd_command(fname, night, out_basedir=out_basedir,
 
 def _all_coadd_commands(flist, night, out_basedir=out_basedir,
                         background=False, match_spectro_mjd=True,
-                        fieldmodel=False):
+                        fieldmodel=False, pmgstars=True):
     # just loop over _one_coadd_command
 
     cmds = []
@@ -85,19 +89,19 @@ def _all_coadd_commands(flist, night, out_basedir=out_basedir,
         else:
             mjdrange = None
 
-        cmd = _one_coadd_command(f, night, out_basedir=out_basedir, background=background, mjdrange=mjdrange, fieldmodel=fieldmodel)
+        cmd = _one_coadd_command(f, night, out_basedir=out_basedir, background=background, mjdrange=mjdrange, fieldmodel=fieldmodel, pmgstars=pmgstars)
         cmds.append(cmd)
 
     return cmds
 
 def _commands(night='20201214', out_basedir=out_basedir, background=False,
-              match_spectro_mjd=True, fieldmodel=False):
+              match_spectro_mjd=True, fieldmodel=False, pmgstars=True):
 
     flist_spectro = _spectro_list(night)
 
     flist = _guider_list(flist_spectro)
 
-    cmds = _all_coadd_commands(flist, night, match_spectro_mjd=match_spectro_mjd, out_basedir=out_basedir, fieldmodel=fieldmodel)
+    cmds = _all_coadd_commands(flist, night, match_spectro_mjd=match_spectro_mjd, out_basedir=out_basedir, fieldmodel=fieldmodel, pmgstars=pmgstars)
 
     night_dir = os.path.join(out_basedir, night)
 
@@ -109,7 +113,8 @@ def _commands(night='20201214', out_basedir=out_basedir, background=False,
     return cmds
 
 def _launch_scripts(night, chunksize=8, match_spectro_mjd=True,
-                    out_basedir=out_basedir, fieldmodel=False):
+                    out_basedir=out_basedir, fieldmodel=False,
+                    pmgstars=True):
 
     if not os.path.exists(out_basedir):
         print('the base output directory ' + out_basedir + \
@@ -118,7 +123,7 @@ def _launch_scripts(night, chunksize=8, match_spectro_mjd=True,
         os.mkdir(out_basedir)
 
     # eventually propagate all keywords
-    cmds = _commands(night=night, match_spectro_mjd=match_spectro_mjd, out_basedir=out_basedir, fieldmodel=fieldmodel)
+    cmds = _commands(night=night, match_spectro_mjd=match_spectro_mjd, out_basedir=out_basedir, fieldmodel=fieldmodel, pmgstars=pmgstars)
 
     random.seed(99)
     random.shuffle(cmds)
