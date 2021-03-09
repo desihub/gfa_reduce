@@ -12,7 +12,7 @@ def _check_header_cards(header):
     keywords = ['TARGTRA', 'TARGTDEC', 'FOCUS', 'ADC1PHI', 'ADC2PHI']
 
     for kw in keywords:
-        if (kw not in header) or (header[kw] is None):
+        if (kw not in header) or (header[kw] is None) or (type(header[kw]).__name__ == 'Undefined'):
             print('SKIPPING DESIMETER FIELD MODEL DUE TO MISSING METADATA')
             return False
 
