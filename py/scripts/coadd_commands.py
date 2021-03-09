@@ -7,7 +7,7 @@ import random
 
 from gfa_reduce.common import expid_from_filename
 
-out_basedir = '/global/cscratch1/sd/ameisner/matched_coadd'
+out_basedir = 'your_output_directory'
 
 basedir = '/global/cfs/cdirs/desi/spectro/data'
 
@@ -85,7 +85,6 @@ def _all_coadd_commands(flist, night, out_basedir=out_basedir,
             mjdrange = None
 
         cmd = _one_coadd_command(f, night, out_basedir=out_basedir, background=background, mjdrange=mjdrange, fieldmodel=fieldmodel)
-        print(cmd)
         cmds.append(cmd)
 
     return cmds
@@ -102,6 +101,8 @@ def _commands(night='20201214', out_basedir=out_basedir, background=False,
     night_dir = os.path.join(out_basedir, night)
 
     if not os.path.exists(night_dir):
+        print('attempting to make nightly subdirectory ' + \
+              night_dir)
         os.mkdir(night_dir)
 
     return cmds
@@ -109,9 +110,11 @@ def _commands(night='20201214', out_basedir=out_basedir, background=False,
 def _launch_scripts(night, chunksize=8, match_spectro_mjd=False,
                     out_basedir=out_basedir, fieldmodel=True):
 
-    # hack for output base directory ...
-    if match_spectro_mjd:
-        out_basedir = out_basedir.replace('coadd_mode', 'matched_coadd')
+    if not os.path.exists(out_basedir):
+        print('the base output directory ' + out_basedir + \
+              ' does not exist, will attempt to create it now')
+        # might be good to check that out_basedir is a one-element string
+        os.mkdir(out_basedir)
 
     # eventually propagate all keywords
     cmds = _commands(night=night, match_spectro_mjd=match_spectro_mjd, out_basedir=out_basedir, fieldmodel=fieldmodel)
@@ -136,18 +139,20 @@ def _launch_scripts(night, chunksize=8, match_spectro_mjd=False,
         indend = min((i + 1)*chunksize, len(cmds))
 
         with open(fname, 'wb') as f:
+            print('writing chunk script ' + str(i+1) + ' ' +
+                  ' of ' + str(n_scripts) + ' ' + fname)
        	    for cmd in cmds[indstart:indend]:
-                print(cmd)
                 f.write((cmd + '\n').encode('ascii'))
 
         f.close()
 
         fnames.append(fname)
-        print('~'*80)
 
     # create the launch script
-    
-    with open('launch.sh', 'wb') as f:
+
+    launch_name = 'launch.sh'
+    with open(launch_name, 'wb') as f:
+        print('writing overall launch script ' + launch_name)
         for fname in fnames:
             cmd = './' + fname + ' &\n'
             f.write(cmd.encode('ascii'))
