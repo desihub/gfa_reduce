@@ -43,7 +43,7 @@ def _guider_list(spectro_flist):
     return result
 
 def _one_coadd_command(fname, night, out_basedir=out_basedir,
-                       background=False, mjdrange=None, fieldmodel=True):
+                       background=False, mjdrange=None, fieldmodel=False):
 
     # assume that if mjdrange is not None, then it will be a two element list [mjdmin, mjdmax]
 
@@ -70,7 +70,7 @@ def _one_coadd_command(fname, night, out_basedir=out_basedir,
 
 def _all_coadd_commands(flist, night, out_basedir=out_basedir,
                         background=False, match_spectro_mjd=True,
-                        fieldmodel=True):
+                        fieldmodel=False):
     # just loop over _one_coadd_command
 
     cmds = []
@@ -91,7 +91,7 @@ def _all_coadd_commands(flist, night, out_basedir=out_basedir,
     return cmds
 
 def _commands(night='20201214', out_basedir=out_basedir, background=False,
-              match_spectro_mjd=True, fieldmodel=True):
+              match_spectro_mjd=True, fieldmodel=False):
 
     flist_spectro = _spectro_list(night)
 
@@ -109,7 +109,7 @@ def _commands(night='20201214', out_basedir=out_basedir, background=False,
     return cmds
 
 def _launch_scripts(night, chunksize=8, match_spectro_mjd=True,
-                    out_basedir=out_basedir, fieldmodel=True):
+                    out_basedir=out_basedir, fieldmodel=False):
 
     if not os.path.exists(out_basedir):
         print('the base output directory ' + out_basedir + \
