@@ -6,6 +6,7 @@ import numpy as np
 import random
 
 from gfa_reduce.common import expid_from_filename
+import gfa_reduce.gfa_red as gfa_red
 
 out_basedir = 'your_output_directory'
 
@@ -53,7 +54,7 @@ def _one_coadd_command(fname, night, out_basedir=out_basedir,
 
     outdir = os.path.join(out_basedir, night + '/' + str(expid).zfill(8))
 
-    cmd = 'python -u /global/homes/a/ameisner/gfa_reduce/py/gfa_reduce/gfa_red.py ' + fname + ' --outdir ' + outdir + ' --skip_image_outputs --cube_index -1 '
+    cmd = 'python -u ' + gfa_red.__file__ + ' ' + fname + ' --outdir ' + outdir + ' --skip_image_outputs --cube_index -1 '
 
     if mjdrange is not None:
         _extra = '--mjdmin ' + str(mjdrange[0]) + ' --mjdmax ' + str(mjdrange[1]) + ' '
