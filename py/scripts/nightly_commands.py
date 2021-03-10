@@ -43,9 +43,23 @@ def _guider_list(spectro_flist):
 
     return result
 
+def _acq_list(night):
+    # night should be a string
+
+    dir = os.path.join(basedir, night)
+
+    assert(os.path.exists(dir))
+
+    pattern = dir + '/' + '????????' + '/guide-????????-0000.fits.fz'
+
+    flist = glob.glob(pattern)
+
+    return flist
+    
 def _one_command(fname, night, out_basedir=out_basedir,
                  background=False, mjdrange=None, fieldmodel=False,
-                 pmgstars=True, make_exp_outdir=True):
+                 pmgstars=True, make_exp_outdir=True,
+                 log_prefix='coadd', acq=False):
 
     # assume that if mjdrange is not None, then it will be a two element list
     # [mjdmin, mjdmax]
@@ -58,10 +72,16 @@ def _one_command(fname, night, out_basedir=out_basedir,
     outdir = os.path.join(out_basedir, night + '/' + str(expid).zfill(8))
 
     if make_exp_outdir:
-        os.mkdir(outdir)
+        if not os.path.exists(outdir):
+            os.mkdir(outdir)
 
     cmd = 'python -u ' + gfa_red.__file__ + ' ' + fname + ' --outdir ' + \
-          outdir + ' --skip_image_outputs --cube_index -1 '
+          outdir + ' --skip_image_outputs'
+
+    if not acq:
+        cmd += ' --cube_index -1 '
+    else:
+        cmd += ' '
 
     if mjdrange is not None:
         _extra = '--mjdmin ' + str(mjdrange[0]) + ' --mjdmax ' + \
@@ -74,11 +94,11 @@ def _one_command(fname, night, out_basedir=out_basedir,
     if pmgstars:
         cmd += '--pmgstars '
 
-    cmd += '&> coadd-' + str(expid).zfill(8) + '.log'
+    cmd += '&> ' + log_prefix + '-' + str(expid).zfill(8) + '.log'
 
     return cmd
 
-def _all_commands(flist, night, out_basedir=out_basedir,
+def _all_coadd_commands(flist, night, out_basedir=out_basedir,
                         background=False, match_spectro_mjd=True,
                         fieldmodel=False, pmgstars=True,
                         make_exp_outdirs=True):
@@ -97,16 +117,38 @@ def _all_commands(flist, night, out_basedir=out_basedir,
             mjdrange = None
 
         cmd = _one_command(f, night, out_basedir=out_basedir,
-                                 background=background, mjdrange=mjdrange,
-                                 fieldmodel=fieldmodel, pmgstars=pmgstars,
-                                 make_exp_outdir=make_exp_outdirs)
+                           background=background, mjdrange=mjdrange,
+                           fieldmodel=fieldmodel, pmgstars=pmgstars,
+                           make_exp_outdir=make_exp_outdirs)
         cmds.append(cmd)
 
     return cmds
 
-def _commands(night='20201214', out_basedir=out_basedir, background=False,
-              match_spectro_mjd=True, fieldmodel=False, pmgstars=True,
-              make_exp_outdirs=True):
+def _gen_acq_commands(night='20201214', out_basedir=out_basedir,
+                      background=False, fieldmodel=False,
+                      make_exp_outdirs=True):
+
+    flist_acq = _acq_list(night)
+
+    if len(flist_acq) == 0:
+        print('no acquisition images to process')
+        return []
+
+    cmds = []
+    for f in flist_acq:
+        cmd = _one_command(f, night, out_basedir=out_basedir,
+                           background=background,
+                           fieldmodel=fieldmodel, pmgstars=False,
+                           make_exp_outdir=make_exp_outdirs,
+                           log_prefix='acq', acq=True)
+        cmds.append(cmd)
+
+    return cmds
+
+def _gen_coadd_commands(night='20201214', out_basedir=out_basedir,
+                        background=False, match_spectro_mjd=True,
+                        fieldmodel=False, pmgstars=True,
+                        make_exp_outdirs=True):
 
     flist_spectro = _spectro_list(night)
 
@@ -119,7 +161,7 @@ def _commands(night='20201214', out_basedir=out_basedir, background=False,
               night_dir)
         os.mkdir(night_dir)
 
-    cmds = _all_commands(flist, night,
+    cmds = _all_coadd_commands(flist, night,
                                match_spectro_mjd=match_spectro_mjd,
                                out_basedir=out_basedir, fieldmodel=fieldmodel,
                                pmgstars=pmgstars,
@@ -137,11 +179,21 @@ def _launch_scripts(night, chunksize=8, match_spectro_mjd=True,
         # might be good to check that out_basedir is a one-element string
         os.mkdir(out_basedir)
 
-    # eventually propagate all keywords
-    cmds = _commands(night=night, match_spectro_mjd=match_spectro_mjd,
-                     out_basedir=out_basedir, fieldmodel=fieldmodel,
-                     pmgstars=pmgstars, make_exp_outdirs=make_exp_outdirs)
+    cmds = _gen_coadd_commands(night=night, match_spectro_mjd=match_spectro_mjd,
+                               out_basedir=out_basedir, fieldmodel=fieldmodel,
+                               pmgstars=pmgstars,
+                               make_exp_outdirs=make_exp_outdirs)
 
+    print(str(len(cmds)) + ' matched coadd jobs to run')
+
+    cmds_acq = _gen_acq_commands(night=night, out_basedir=out_basedir,
+                                 fieldmodel=fieldmodel,
+                                 make_exp_outdirs=make_exp_outdirs)
+
+    print(str(len(cmds_acq)) + ' acquisition images to run')
+
+    cmds = cmds + cmds_acq
+    
     random.seed(99)
     random.shuffle(cmds)
 
@@ -154,7 +206,7 @@ def _launch_scripts(night, chunksize=8, match_spectro_mjd=True,
     fnames = []
     for i in range(n_scripts):
 
-        fname = 'coadd_chunk_' + str(i).zfill(3) + '.sh'
+        fname = 'chunk_' + str(i).zfill(3) + '.sh'
 
         assert(not os.path.exists(fname))
 
