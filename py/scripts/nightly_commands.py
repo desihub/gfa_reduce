@@ -131,6 +131,10 @@ def _all_coadd_commands(flist, night, out_basedir=out_basedir,
             fname_spectro = f.replace('guide-', 'desi-')
             assert(os.path.exists(fname_spectro))
             h = fits.getheader(fname_spectro, extname='SPEC')
+
+            if (h['MJD-OBS'] is None) or (h['EXPTIME'] is None):
+                continue
+
             mjdmin = h['MJD-OBS']
             mjdmax = h['MJD-OBS'] + h['EXPTIME']/(3600.0*24.0)
             mjdrange = [mjdmin, mjdmax]
