@@ -43,9 +43,15 @@ def _guider_list(spectro_flist):
     
     result = []
 
+    search_dirs = _search_dirs()
+
     for f in flist_pred:
         if os.path.exists(f):
             result.append(f)
+        elif os.path.exists(f.replace(search_dirs[0], search_dirs[1])):
+            result.append(f.replace(search_dirs[0], search_dirs[1]))
+        elif os.path.exists(f.replace(search_dirs[1], search_dirs[0])):
+            result.append(f.replace(search_dirs[1], search_dirs[0]))
 
     if len(result) == 0:
         print('no guide cubes with corresponding spectra ???')
