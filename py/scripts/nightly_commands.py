@@ -190,9 +190,8 @@ def _gen_coadd_commands(night='20201214', out_basedir=out_basedir,
 
     return cmds
 
-def _launch_scripts(night, chunksize=8, match_spectro_mjd=True,
-                    out_basedir=out_basedir, fieldmodel=False,
-                    pmgstars=True, make_exp_outdirs=True):
+def _launch_scripts(night, match_spectro_mjd=True, out_basedir=out_basedir,
+                    fieldmodel=False, pmgstars=True, make_exp_outdirs=True):
 
     if not os.path.exists(out_basedir):
         print('the base output directory ' + out_basedir + \
@@ -218,11 +217,15 @@ def _launch_scripts(night, chunksize=8, match_spectro_mjd=True,
     random.seed(99)
     random.shuffle(cmds)
 
-    n_scripts = int(np.ceil(float(len(cmds))/float(chunksize)))
+    # number of concurrent processes to run on one Cori node
+    # could consider pushing this higher
+    n_scripts_max = 20
 
-    if n_scripts > 20:
-         print('do not run more than 20 GFA reductions in parallel !!!')
-         assert(False)
+    chunksize = int(np.ceil(float(len(cmds))/float(n_scripts_max)))
+
+    print('packaging ' + str(chunksize) + ' jobs per worker')
+
+    n_scripts = int(np.ceil(float(len(cmds))/float(chunksize)))
 
     fnames = []
     for i in range(n_scripts):
