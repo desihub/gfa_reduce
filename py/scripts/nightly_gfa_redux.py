@@ -11,7 +11,7 @@ import argparse
 from gfa_reduce.common import expid_from_filename
 import gfa_reduce.gfa_red as gfa_red
 
-out_basedir = 'your_output_directory'
+out_basedir = 'gfa_redux'
 
 basedir = '/global/cfs/cdirs/desi/spectro/data'
 lostfound = '/global/cfs/cdirs/desi/spectro/staging/lost+found'
