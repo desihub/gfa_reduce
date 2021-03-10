@@ -1,9 +1,12 @@
+#!/usr/bin/env python
+
 import os
 import glob
 from astropy.table import Table
 import astropy.io.fits as fits
 import numpy as np
 import random
+import argparse
 
 from gfa_reduce.common import expid_from_filename
 import gfa_reduce.gfa_red as gfa_red
@@ -273,3 +276,33 @@ def _launch_scripts(night, match_spectro_mjd=True, out_basedir=out_basedir,
         os.system('chmod a+rx ' + f)
 
     os.system('chmod a+rx ' + launch_name)
+
+if __name__ == "__main__":
+    descr = 'generate nightly gfa_reduce processing launch scripts'
+    parser = argparse.ArgumentParser(description=descr)
+
+    parser.add_argument('night', type=str, nargs=1,
+                        help="observing night")
+
+    parser.add_argument('--out_basedir', default=out_basedir, type=str,
+                        help='base output directory')
+
+    parser.add_argument('--fieldmodel', default=False, action='store_true',
+                        help='fit desimeter FieldModel')
+
+    parser.add_argument('--skip_exp_outdirs', default=False,
+                        action='store_true',
+                        help="don't pre-generate per EXPID output directories")
+
+    parser.add_argument('--skip_pmgstars', default=False, action='store_true',
+                        help="skip PMGSTARS forced photometry")
+
+    args = parser.parse_args()
+
+    make_exp_outdirs = not args.skip_exp_outdirs
+    pmgstars = not args.skip_pmgstars
+
+    _launch_scripts(args.night[0], match_spectro_mjd=True,
+                    out_basedir=args.out_basedir,
+                    fieldmodel=args.fieldmodel, pmgstars=pmgstars,
+                    make_exp_outdirs=make_exp_outdirs)
