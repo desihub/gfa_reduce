@@ -230,7 +230,7 @@ def _launch_scripts(night, match_spectro_mjd=True, out_basedir=out_basedir,
     fnames = []
     for i in range(n_scripts):
 
-        fname = 'chunk_' + str(i).zfill(3) + '.sh'
+        fname = 'chunk_' + str(i).zfill(3) + '_' + night + '.sh'
 
         assert(not os.path.exists(fname))
 
@@ -249,7 +249,7 @@ def _launch_scripts(night, match_spectro_mjd=True, out_basedir=out_basedir,
 
     # create the launch script
 
-    launch_name = 'launch.sh'
+    launch_name = 'launch_' + night + '.sh'
     with open(launch_name, 'wb') as f:
         print('writing overall launch script ' + launch_name)
         for fname in fnames:
