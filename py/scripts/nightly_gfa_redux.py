@@ -13,8 +13,8 @@ import gfa_reduce.gfa_red as gfa_red
 
 out_basedir = 'gfa_redux'
 
-basedir = '/global/cfs/cdirs/desi/spectro/data'
-lostfound = '/global/cfs/cdirs/desi/spectro/staging/lost+found'
+basedir = os.environ['DESI_SPECTRO_DATA']
+lostfound = os.environ['DESI_LOST_FOUND']
 
 def _search_dirs():
     return [basedir, lostfound]
