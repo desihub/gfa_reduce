@@ -5,9 +5,9 @@ import numpy as np
 import os
 import argparse
 
-basedir = '/global/cfs/cdirs/desi/users/ameisner/GFA/reduced/v0022_matched'
+basedir = '/global/cfs/cdirs/desi/users/ameisner/GFA/reduced/v0026_matched'
 
-def cube_index_median(tab, extra_cuts=False):
+def cube_index_median(tab, extra_cuts=False, matched_coadd=True):
 
     # make quality cuts
 
@@ -27,16 +27,27 @@ def cube_index_median(tab, extra_cuts=False):
 
     ids_u = np.unique(_id)
 
+    cols_to_median = ['MJD', 'FWHM_ASEC', 'TRANSPARENCY', 'SKY_MAG_AB',
+                      'FIBER_FRACFLUX', 'FIBER_FRACFLUX_ELG',
+                      'FIBER_FRACFLUX_BGS', 'AIRMASS', 'RADPROF_FWHM_ASEC']
+
+    if matched_coadd:
+        cols_to_median += ['FIBERFAC', 'FIBERFAC_ELG', 'FIBERFAC_BGS']
+    
     rows = []
     for id_u in ids_u:
         _tab = tab[_id == id_u]
 
         row = Table()
 
-        for colname in ['EXPID', 'CUBE_INDEX', 'NIGHT', 'EXPTIME', 'FNAME_RAW', 'SKYRA', 'SKYDEC', 'PROGRAM', 'MOON_ILLUMINATION', 'MOON_ZD_DEG', 'MOON_SEP_DEG', 'KTERM']:
+        for colname in ['EXPID', 'CUBE_INDEX', 'NIGHT', 'EXPTIME',
+                        'FNAME_RAW', 'SKYRA', 'SKYDEC', 'PROGRAM',
+                        'MOON_ILLUMINATION', 'MOON_ZD_DEG', 'MOON_SEP_DEG',
+                        'KTERM', 'FRACFLUX_NOMINAL_POINTSOURCE',
+                        'FRACFLUX_NOMINAL_ELG', 'FRACFLUX_NOMINAL_BGS']:
             row[colname] = [_tab[0][colname]]
 
-        for colname in ['MJD', 'FWHM_ASEC', 'TRANSPARENCY', 'SKY_MAG_AB', 'FIBER_FRACFLUX', 'FIBER_FRACFLUX_ELG', 'AIRMASS', 'RADPROF_FWHM_ASEC']:
+        for colname in cols_to_median:
             row[colname] = [np.nanmedian(_tab[colname])]
 
         rows.append(row)
