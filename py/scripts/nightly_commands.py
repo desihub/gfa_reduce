@@ -261,4 +261,4 @@ def _launch_scripts(night, match_spectro_mjd=True, out_basedir=out_basedir,
     for f in fnames:
         os.system('chmod a+rx ' + f)
 
-    os.system('chmod a+rx launch.sh')
+    os.system('chmod a+rx ' + launch_name)
