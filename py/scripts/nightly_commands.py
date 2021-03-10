@@ -11,19 +11,29 @@ import gfa_reduce.gfa_red as gfa_red
 out_basedir = 'your_output_directory'
 
 basedir = '/global/cfs/cdirs/desi/spectro/data'
+lostfound = '/global/cfs/cdirs/desi/spectro/staging/lost+found'
+
+def _search_dirs():
+    return [basedir, lostfound]
 
 def _spectro_list(night):
     # night should be a string
 
-    dir = os.path.join(basedir, night)
+    search_dirs = _search_dirs()
 
-    assert(os.path.exists(dir))
+    result = []
+    for _basedir in search_dirs:
+        dir = os.path.join(_basedir, night)
 
-    pattern = dir + '/' + '????????' + '/desi-????????.fits.fz'
+        assert(os.path.exists(dir))
 
-    flist = glob.glob(pattern)
+        pattern = dir + '/' + '????????' + '/desi-????????.fits.fz'
 
-    return flist
+        flist = glob.glob(pattern)
+
+        result = result + flist
+
+    return result
 
 # this is the list of guide-????????.fits.fz files corresponding to a
 # desi-????????.fits.fz spectro file
@@ -39,22 +49,27 @@ def _guider_list(spectro_flist):
 
     if len(result) == 0:
         print('no guide cubes with corresponding spectra ???')
-        assert(False)
 
     return result
 
 def _acq_list(night):
     # night should be a string
 
-    dir = os.path.join(basedir, night)
+    search_dirs = _search_dirs()
 
-    assert(os.path.exists(dir))
+    result = []
+    for _basedir in search_dirs:
+        dir = os.path.join(_basedir, night)
 
-    pattern = dir + '/' + '????????' + '/guide-????????-0000.fits.fz'
+        assert(os.path.exists(dir))
 
-    flist = glob.glob(pattern)
+        pattern = dir + '/' + '????????' + '/guide-????????-0000.fits.fz'
 
-    return flist
+        flist = glob.glob(pattern)
+
+        result = result + flist
+
+    return result
     
 def _one_command(fname, night, out_basedir=out_basedir,
                  background=False, mjdrange=None, fieldmodel=False,
