@@ -45,18 +45,25 @@ def _guider_list(spectro_flist):
 
     search_dirs = _search_dirs()
 
-    for f in flist_pred:
+    spectro_flist_matched = []
+
+    for i, f in enumerate(flist_pred):
         if os.path.exists(f):
             result.append(f)
+            spectro_flist_matched.append(spectro_flist[i])
         elif os.path.exists(f.replace(search_dirs[0], search_dirs[1])):
             result.append(f.replace(search_dirs[0], search_dirs[1]))
+            spectro_flist_matched.append(spectro_flist[i])
         elif os.path.exists(f.replace(search_dirs[1], search_dirs[0])):
             result.append(f.replace(search_dirs[1], search_dirs[0]))
+            spectro_flist_matched.append(spectro_flist[i])
 
     if len(result) == 0:
         print('no guide cubes with corresponding spectra ???')
 
-    return result
+    assert(len(spectro_flist_matched) == len(result))
+
+    return result, spectro_flist_matched
 
 def _acq_list(night):
     # night should be a string
@@ -119,16 +126,16 @@ def _one_command(fname, night, out_basedir=out_basedir,
 
     return cmd
 
-def _all_coadd_commands(flist, night, out_basedir=out_basedir,
+def _all_coadd_commands(flist, flist_spectro, night, out_basedir=out_basedir,
                         background=False, match_spectro_mjd=True,
                         fieldmodel=False, pmgstars=True,
                         make_exp_outdirs=True):
     # just loop over _one_command
 
     cmds = []
-    for f in flist:
+    for i, f in enumerate(flist):
         if match_spectro_mjd:
-            fname_spectro = f.replace('guide-', 'desi-')
+            fname_spectro = flist_spectro[i]
             assert(os.path.exists(fname_spectro))
             h = fits.getheader(fname_spectro, extname='SPEC')
 
@@ -177,7 +184,7 @@ def _gen_coadd_commands(night='20201214', out_basedir=out_basedir,
 
     flist_spectro = _spectro_list(night)
 
-    flist = _guider_list(flist_spectro)
+    flist, flist_spectro_matched = _guider_list(flist_spectro)
 
     night_dir = os.path.join(out_basedir, night)
 
@@ -186,7 +193,7 @@ def _gen_coadd_commands(night='20201214', out_basedir=out_basedir,
               night_dir)
         os.mkdir(night_dir)
 
-    cmds = _all_coadd_commands(flist, night,
+    cmds = _all_coadd_commands(flist, flist_spectro_matched, night,
                                match_spectro_mjd=match_spectro_mjd,
                                out_basedir=out_basedir, fieldmodel=fieldmodel,
                                pmgstars=pmgstars,
