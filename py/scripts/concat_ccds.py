@@ -73,6 +73,8 @@ def _nights_list(night_min, night_max, basedir=None, acq=False):
     dirs = dirs[(_dirs >= night_min) & (_dirs <= night_max)]
 
     nights = [os.path.split(d)[-1] for d in dirs]
+
+    nights.sort()
     return nights
 
 def _concat(night='20201214', basedir=None, acq=False):
@@ -133,7 +135,7 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
     return result, med, _med
 
 def _write_many_nights(night_min='20201214', night_max='99999999',
-                       basedir=None, acq=False):
+                       basedir=None, acq=False, phase='SV1'):
 
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
@@ -149,7 +151,8 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
 
     night = str(np.max(result['NIGHT']))
     flavor = 'matched_coadd' if not acq else 'acq'
-    outname = 'offline_' + flavor + '_ccds_SV1-thru_' + night + '.fits'
+    outname = 'offline_' + flavor + '_ccds_' + phase + '-thru_' + \
+              night + '.fits'
     print('attempting to write multi-extension FITS output to ' + outname)
     hdul.writeto(outname)
     print('done')
@@ -170,8 +173,11 @@ if __name__=="__main__":
     parser.add_argument('--night_max', default='99999999', type=str,
                         help='last observing night')
 
+    parser.add_argument('--phase', default='SV1', type=str,
+                        help='survey phase (SV1, SV2, ...)')
+
     args = parser.parse_args()
 
     _write_many_nights(night_min=args.night_min, night_max=args.night_max,
-                       basedir=args.basedir, acq=args.acq)
+                       basedir=args.basedir, acq=args.acq, phase=args.phase)
 
