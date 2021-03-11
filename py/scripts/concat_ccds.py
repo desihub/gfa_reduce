@@ -5,7 +5,11 @@ import numpy as np
 import os
 import argparse
 
-basedir = '/global/cfs/cdirs/desi/users/ameisner/GFA/reduced/v0026_matched'
+def _get_default_basedir(acq=False):
+    basedir = os.environ['GFA_REDUX_BASE'] + '_' + \
+              ('matched' if not acq else 'acq')
+
+    return basedir
 
 def cube_index_median(tab, extra_cuts=False, matched_coadd=True):
 
@@ -56,7 +60,10 @@ def cube_index_median(tab, extra_cuts=False, matched_coadd=True):
 
     return result
 
-def _nights_list(night_min, night_max, basedir=basedir):
+def _nights_list(night_min, night_max, basedir=None, acq=False):
+
+    if basedir is None:
+        basedir = _get_default_basedir(acq=acq)
 
     dirs = glob.glob(basedir + '/????????')
 
@@ -68,7 +75,10 @@ def _nights_list(night_min, night_max, basedir=basedir):
     nights = [os.path.split(d)[-1] for d in dirs]
     return nights
 
-def _concat(night='20201214', basedir=basedir):
+def _concat(night='20201214', basedir=None, acq=False):
+
+    if basedir is None:
+        basedir = _get_default_basedir(acq=acq)
 
     pattern = basedir + '/' + night + '/????????/*ccds*.fits'
 
@@ -86,7 +96,8 @@ def _concat(night='20201214', basedir=basedir):
     result = vstack(tables)
 
     # for matched coadds during SV1 this is always true...
-    result['spectro_expid'] = result['expid']
+    if not acq:
+        result['spectro_expid'] = result['expid']
 
     for name in result.colnames:
         result.rename_column(name, name.upper())
@@ -94,15 +105,18 @@ def _concat(night='20201214', basedir=basedir):
     return result
 
 def _concat_many_nights(night_min='20201214', night_max='99999999',
-                        basedir=basedir):
+                        basedir=None, acq=False):
+
+    if basedir is None:
+        basedir = _get_default_basedir(acq=acq)
 
     print('reading in _ccds tables...')
 
-    nights = _nights_list(night_min, night_max, basedir=basedir)
+    nights = _nights_list(night_min, night_max, basedir=basedir, acq=acq)
 
     tables = []
     for night in nights:
-        table = _concat(night=night, basedir=basedir)
+        table = _concat(night=night, basedir=basedir, acq=acq)
         tables.append(table)
 
     result = vstack(tables)
@@ -112,18 +126,21 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
     result = result[sind]
 
     print('assembling per-frame median extension with minimal quality cuts...')
-    med = cube_index_median(result)
+    med = cube_index_median(result, matched_coadd=(not acq))
     print('assembling per-frame median extension with additional quality cuts...')
-    _med = cube_index_median(result, extra_cuts=True)
+    _med = cube_index_median(result, extra_cuts=True, matched_coadd=(not acq))
     
     return result, med, _med
 
 def _write_many_nights(night_min='20201214', night_max='99999999',
-                       basedir=basedir):
+                       basedir=None, acq=False):
+
+    if basedir is None:
+        basedir = _get_default_basedir(acq=acq)
 
     result, med, _med = _concat_many_nights(night_min=night_min,
                                             night_max=night_max,
-                                            basedir=basedir)
+                                            basedir=basedir, acq=acq)
     
     hdul = fits.HDUList(hdus=[fits.PrimaryHDU(),
                               fits.BinTableHDU(data=result),
@@ -131,7 +148,8 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
                               fits.BinTableHDU(data=_med)])
 
     night = str(np.max(result['NIGHT']))
-    outname = 'offline_matched_coadd_ccds_SV1-thru_' + night + '.fits'
+    flavor = 'matched_coadd' if not acq else 'acq'
+    outname = 'offline_' + flavor + '_ccds_SV1-thru_' + night + '.fits'
     print('attempting to write multi-extension FITS output to ' + outname)
     hdul.writeto(outname)
     print('done')
@@ -140,7 +158,10 @@ if __name__=="__main__":
     descr = 'gather gfa_reduce _ccds table outputs'
     parser = argparse.ArgumentParser(description=descr)
 
-    parser.add_argument('--basedir', default=basedir, type=str,
+    parser.add_argument('--acq', default=False, action='store_true',
+                        help='gather acquisition image _ccds tables')
+
+    parser.add_argument('--basedir', default=None, type=str,
                         help='input directory')
 
     parser.add_argument('--night_min', default='20201214', type=str,
@@ -152,5 +173,5 @@ if __name__=="__main__":
     args = parser.parse_args()
 
     _write_many_nights(night_min=args.night_min, night_max=args.night_max,
-                       basedir=args.basedir)
+                       basedir=args.basedir, acq=args.acq)
 
