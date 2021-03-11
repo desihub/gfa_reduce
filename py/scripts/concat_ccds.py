@@ -79,6 +79,8 @@ def _nights_list(night_min, night_max, basedir=None, acq=False):
 
 def _concat(night='20201214', basedir=None, acq=False):
 
+    print('Working on night ' + night)
+
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
 
@@ -135,7 +137,12 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
     return result, med, _med
 
 def _write_many_nights(night_min='20201214', night_max='99999999',
-                       basedir=None, acq=False, phase='SV1'):
+                       basedir=None, acq=False, phase='SV1',
+                       outdir='.'):
+
+    if not os.path.exists(outdir):
+        print('output directory does not exists ... quitting')
+        return
 
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
@@ -153,6 +160,9 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
     flavor = 'matched_coadd' if not acq else 'acq'
     outname = 'offline_' + flavor + '_ccds_' + phase + '-thru_' + \
               night + '.fits'
+
+    outname = os.path.join(outdir, outname)
+
     print('attempting to write multi-extension FITS output to ' + outname)
     hdul.writeto(outname)
     print('done')
@@ -176,8 +186,12 @@ if __name__=="__main__":
     parser.add_argument('--phase', default='SV1', type=str,
                         help='survey phase (SV1, SV2, ...)')
 
+    parser.add_argument('--outdir', default='.', type=str,
+                        help='directory in which to write output file')
+
     args = parser.parse_args()
 
     _write_many_nights(night_min=args.night_min, night_max=args.night_max,
-                       basedir=args.basedir, acq=args.acq, phase=args.phase)
+                       basedir=args.basedir, acq=args.acq, phase=args.phase,
+                       outdir=args.outdir)
 
