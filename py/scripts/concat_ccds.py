@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import astropy.io.fits as fits
 from astropy.table import Table, vstack, hstack
 import glob
@@ -213,7 +215,7 @@ if __name__=="__main__":
                         help='directory in which to write output file')
 
     parser.add_argument('--my_redux_dir', default=None, type=str,
-                        help='base directory for your gfa_reduce outputsx')
+                        help='base directory for your gfa_reduce outputs')
 
     args = parser.parse_args()
 
