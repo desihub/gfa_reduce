@@ -54,6 +54,9 @@ def cube_index_median(tab, extra_cuts=False, matched_coadd=True):
         for colname in cols_to_median:
             row[colname] = [np.nanmedian(_tab[colname])]
 
+        row['MINCONTRAST'] = np.min(_tab['CONTRAST'])
+        row['MAXCONTRAST'] = np.max(_tab['CONTRAST'])
+
         rows.append(row)
 
     result = vstack(rows)
