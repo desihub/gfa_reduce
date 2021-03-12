@@ -84,7 +84,8 @@ def _concat(night='20201214', basedir=None, acq=False):
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
 
-    pattern = basedir + '/' + night + '/????????/*ccds*.fits'
+    suffix = '-0000_ccds.fits' if acq else '_ccds--0001.fits'
+    pattern = basedir + '/' + night + '/????????/*' + suffix
 
     flist = glob.glob(pattern)
 
