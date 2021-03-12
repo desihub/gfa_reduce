@@ -79,8 +79,6 @@ def _nights_list(night_min, night_max, basedir=None, acq=False):
 
 def _concat(night='20201214', basedir=None, acq=False):
 
-    print('Working on night ' + night)
-
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
 
@@ -91,7 +89,7 @@ def _concat(night='20201214', basedir=None, acq=False):
 
     tables = []
     for i, f in enumerate(flist):
-        print(i, f)
+        print(i+1, ' of ', len(flist), ' : ', f)
         tab = fits.getdata(f)
         tab = Table(tab)
         tab['fwhm_asec'] = tab['psf_fwhm_asec']
@@ -120,7 +118,9 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
     nights = _nights_list(night_min, night_max, basedir=basedir, acq=acq)
 
     tables = []
-    for night in nights:
+    for i, night in enumerate(nights):
+        print('Working on night ' + night + ' (' + str(i+1) + ' of ' +
+              str(len(nights)) + ')')
         table = _concat(night=night, basedir=basedir, acq=acq)
         tables.append(table)
 
