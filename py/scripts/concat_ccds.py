@@ -154,6 +154,10 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
     result, med, _med = _concat_many_nights(night_min=night_min,
                                             night_max=night_max,
                                             basedir=basedir, acq=acq)
+
+    cube_index = 0 if acq else -1
+    if (np.sum(result['CUBE_INDEX'] != cube_index) > 0) or (np.sum(med['CUBE_INDEX'] != cube_index) > 0) or (np.sum(_med['CUBE_INDEX'] != cube_index) > 0):
+        print('WARNING: wrong CUBE_INDEX detected')
     
     hdul = fits.HDUList(hdus=[fits.PrimaryHDU(),
                               fits.BinTableHDU(data=result),
