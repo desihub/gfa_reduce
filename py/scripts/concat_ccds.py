@@ -80,10 +80,17 @@ def _nights_list(night_min, night_max, basedir=None, acq=False):
     nights.sort()
     return nights
 
-def _concat(night='20201214', basedir=None, acq=False):
+def _concat(night='20201214', basedir=None, acq=False, user_basedir=None):
 
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
+
+    # give precedence to user-generated version of this night's
+    # gfa_reduce outputs, if those exist
+    if user_basedir is not None:
+        user_nightdir = os.path.join(user_basedir, night)
+        if os.path.exists(user_nightdir):
+            basedir = user_basedir
 
     suffix = '-0000_ccds.fits' if acq else '_ccds--0001.fits'
     pattern = basedir + '/' + night + '/????????/*' + suffix
@@ -111,7 +118,7 @@ def _concat(night='20201214', basedir=None, acq=False):
     return result
 
 def _concat_many_nights(night_min='20201214', night_max='99999999',
-                        basedir=None, acq=False):
+                        basedir=None, acq=False, user_basedir=None):
 
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
@@ -120,11 +127,18 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
 
     nights = _nights_list(night_min, night_max, basedir=basedir, acq=acq)
 
+    if user_basedir is not None:
+        nights_user = _nights_list(night_min, night_max, basedir=user_basedir,
+                                   acq=acq)
+        nights = list(set(nights_user + nights))
+        nights.sort()
+
     tables = []
     for i, night in enumerate(nights):
         print('Working on night ' + night + ' (' + str(i+1) + ' of ' +
               str(len(nights)) + ')')
-        table = _concat(night=night, basedir=basedir, acq=acq)
+        table = _concat(night=night, basedir=basedir, acq=acq,
+                        user_basedir=user_basedir)
         tables.append(table)
 
     result = vstack(tables)
@@ -142,7 +156,7 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
 
 def _write_many_nights(night_min='20201214', night_max='99999999',
                        basedir=None, acq=False, phase='SV1',
-                       outdir='.'):
+                       outdir='.', user_basedir=None):
 
     if not os.path.exists(outdir):
         print('output directory does not exists ... quitting')
@@ -153,7 +167,8 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
 
     result, med, _med = _concat_many_nights(night_min=night_min,
                                             night_max=night_max,
-                                            basedir=basedir, acq=acq)
+                                            basedir=basedir, acq=acq,
+                                            user_basedir=user_basedir)
 
     cube_index = 0 if acq else -1
     if (np.sum(result['CUBE_INDEX'] != cube_index) > 0) or (np.sum(med['CUBE_INDEX'] != cube_index) > 0) or (np.sum(_med['CUBE_INDEX'] != cube_index) > 0):
@@ -197,9 +212,12 @@ if __name__=="__main__":
     parser.add_argument('--outdir', default='.', type=str,
                         help='directory in which to write output file')
 
+    parser.add_argument('--my_redux_dir', default=None, type=str,
+                        help='base directory for your gfa_reduce outputsx')
+
     args = parser.parse_args()
 
     _write_many_nights(night_min=args.night_min, night_max=args.night_max,
                        basedir=args.basedir, acq=args.acq, phase=args.phase,
-                       outdir=args.outdir)
+                       outdir=args.outdir, user_basedir=args.my_redux_dir)
 
