@@ -28,7 +28,8 @@ def _spectro_list(night):
     for _basedir in search_dirs:
         dir = os.path.join(_basedir, night)
 
-        assert(os.path.exists(dir))
+        if not os.path.exists(dir):
+            continue
 
         pattern = dir + '/' + '????????' + '/desi-????????.fits.fz'
 
@@ -77,7 +78,8 @@ def _acq_list(night):
     for _basedir in search_dirs:
         dir = os.path.join(_basedir, night)
 
-        assert(os.path.exists(dir))
+        if not os.path.exists(dir):
+            continue
 
         pattern = dir + '/' + '????????' + '/guide-????????-0000.fits.fz'
 
