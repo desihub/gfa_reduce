@@ -135,6 +135,9 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
         nights = list(set(nights_user + nights))
         nights.sort()
 
+    print('first night is : ' + str(np.min(np.array(nights, dtype=int))))
+    print('last night is : ' + str(np.max(np.array(nights, dtype=int))))
+
     tables = []
     for i, night in enumerate(nights):
         print('Working on night ' + night + ' (' + str(i+1) + ' of ' +
