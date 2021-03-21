@@ -14,15 +14,26 @@ import gfa_reduce
 # using Stephen Bailey's "multirunner" template as the basis for this script
 # https://raw.githubusercontent.com/sbailey/multirunner/master/multirunner.py
 
+default_out_basedir = '/n/home/datasystems/users/ameisner/reduced/realtime'
+dts_raw = '/data/dts/exposures/raw'
+
 parser = argparse.ArgumentParser(usage = "{prog} [options]")
 parser.add_argument("--night", type=str,  help="NIGHT string")
-parser.add_argument("-n", "--numworkers", type=int,  default=1, help="number of workers")
-parser.add_argument("-w", "--waittime", type=int, default=5, help="wait time between directory checks")
-parser.add_argument("-e", "--expid_min", type=int, default=-1, help="start with this EXPID value")
-parser.add_argument("--out_basedir", type=str, default='/n/home/datasystems/users/ameisner/reduced/realtime', help="base output directory for GFA reductions")
-parser.add_argument("--guider", default=False, action='store_true', help="process guide-????????.fits.fz files instead of gfa-????????.fz files")
-parser.add_argument("--focus", default=False, action='store_true', help="optimize for focus scan analysis")
-parser.add_argument("--indir", type=str, default='/data/dts/exposures/raw', help="base input directory to watch for new exposures")
+parser.add_argument("-n", "--numworkers", type=int,  default=1,
+                    help="number of workers")
+parser.add_argument("-w", "--waittime", type=int, default=5,
+                    help="wait time between directory checks")
+parser.add_argument("-e", "--expid_min", type=int, default=-1,
+                    help="start with this EXPID value")
+parser.add_argument("--out_basedir", type=str, default=default_out_basedir,
+                    help="base output directory for GFA reductions")
+parser.add_argument("--guider", default=False, action='store_true',
+                    help="process guide-????????.fits.fz files instead of gfa-????????.fz files")
+parser.add_argument("--focus", default=False, action='store_true',
+                    help="optimize for focus scan analysis")
+parser.add_argument("--indir", type=str, default=dts_raw,
+                    help="base input directory to watch for new exposures")
+
 args = parser.parse_args()
 
 class ProcItem:
@@ -86,7 +97,8 @@ def run(workerid, q):
         print('Worker {} processing {}'.format(workerid, filename))
         sys.stdout.flush()
         #- Do something with that filename
-        outdir = os.path.join(night_basedir_out, str(expid_from_filename(filename)).zfill(8))
+        outdir = os.path.join(night_basedir_out,
+                              str(expid_from_filename(filename)).zfill(8))
 
         if args.guider and (image.cube_index < 12):
             print('sleeping for 1 minute to avoid bad DTS links')
@@ -94,11 +106,18 @@ def run(workerid, q):
 
         try:
             if not args.focus:
-                _proc(filename, outdir=outdir, realtime=True, cube_index=image.cube_index, skip_image_outputs=True, skip_raw_imstats=True)
+                _proc(filename, outdir=outdir, realtime=True,
+                      cube_index=image.cube_index, skip_image_outputs=True,
+                      skip_raw_imstats=True)
             else:
-                _proc(filename, outdir=outdir, realtime=True, cube_index=image.cube_index, skip_image_outputs=True, skip_raw_imstats=True, skip_astrometry=True, no_ps1_xmatch=True, no_gaia_xmatch=True, do_sky_mag=False, skip_2d_gaussians=True)
+                _proc(filename, outdir=outdir, realtime=True,
+                      cube_index=image.cube_index, skip_image_outputs=True,
+                      skip_raw_imstats=True, skip_astrometry=True,
+                      no_ps1_xmatch=True, no_gaia_xmatch=True,
+                      do_sky_mag=False, skip_2d_gaussians=True)
         except:
-            print('PROCESSING FAILURE: ' + image.fname_raw + '   ' + image._cube_index_string())
+            print('PROCESSING FAILURE: ' + image.fname_raw + '   ' + \
+                  image._cube_index_string())
         print('Worker {} done with {}'.format(workerid, filename))
         sys.stdout.flush()
 
@@ -113,7 +132,8 @@ for i in range(args.numworkers):
 exp_outdirs = glob.glob(night_basedir_out + '/????????')
 prefix = 'guide-' if guider else 'gfa-'
 # this will not work correctly for cases where some subset of slices of a guide cube have been processed...
-known_files = set([indir + '/' + os.path.split(d)[-1] + '/' + prefix + os.path.split(d)[-1] + '.fits.fz' for d in exp_outdirs])
+known_files = set([indir + '/' + os.path.split(d)[-1] + '/' + prefix + \
+                   os.path.split(d)[-1] + '.fits.fz' for d in exp_outdirs])
 
 print('Number of known files = ', len(known_files))
 
@@ -138,7 +158,8 @@ while(True):
                     q.put(image)
                 else:
                     h = fits.getheader(filename, extname='GUIDER')
-                    outdir = os.path.join(night_basedir_out, str(expid_from_filename(filename)).zfill(8))
+                    outdir = os.path.join(night_basedir_out,
+                                          str(expid_from_filename(filename)).zfill(8))
                     os.mkdir(outdir) # avoids race condition in _proc ...
                     __cube_index = 1 if (h['FRAMES'] > 1) else 0
                     image = ProcItem(filename, cube_index=__cube_index)
