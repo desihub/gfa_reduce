@@ -14,8 +14,8 @@ import gfa_reduce
 # using Stephen Bailey's "multirunner" template as the basis for this script
 # https://raw.githubusercontent.com/sbailey/multirunner/master/multirunner.py
 
-default_out_basedir = '/n/home/datasystems/users/ameisner/reduced/realtime'
-dts_raw = '/data/dts/exposures/raw'
+default_out_basedir = os.environ['DEFAULT_REDUX_DIR']
+dts_raw = os.environ['DTS_RAW']
 
 parser = argparse.ArgumentParser(usage = "{prog} [options]")
 parser.add_argument("--night", type=str,  help="NIGHT string")
