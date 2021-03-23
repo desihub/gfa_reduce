@@ -10,6 +10,7 @@ import numpy as np
 import astropy.io.fits as fits
 import json
 import gfa_reduce
+import gfa_reduce.analysis.util as util
 
 # using Stephen Bailey's "multirunner" template as the basis for this script
 # https://raw.githubusercontent.com/sbailey/multirunner/master/multirunner.py
@@ -18,7 +19,8 @@ default_out_basedir = os.environ['DEFAULT_REDUX_DIR']
 dts_raw = os.environ['DTS_RAW']
 
 parser = argparse.ArgumentParser(usage = "{prog} [options]")
-parser.add_argument("--night", type=str,  help="NIGHT string")
+parser.add_argument("--night", type=str, default='now',
+                    help="NIGHT string")
 parser.add_argument("-n", "--numworkers", type=int,  default=1,
                     help="number of workers")
 parser.add_argument("-w", "--waittime", type=int, default=5,
@@ -37,10 +39,11 @@ parser.add_argument("--indir", type=str, default=dts_raw,
 args = parser.parse_args()
 
 class ProcItem:
-    def __init__(self, fname_raw, cube_index=None):
+    def __init__(self, fname_raw, night, cube_index=None):
         self.fname_raw = fname_raw
         self.cube_index = cube_index
         self.is_guider_cube = cube_index is not None
+        self.night = night
 
     def _cube_index_string(self):
         if self.is_guider_cube:
@@ -69,19 +72,46 @@ print('PATH TO gfa_reduce IS : ')
 print(gfa_reduce.__file__)
 
 assert(os.path.exists(args.indir))
-indir = args.indir + '/' + args.night
-print('WATCHING FOR NEW FILES IN : ' + indir)
-if not os.path.exists(indir):
-    print('WARNING: INPUT DIRECTORY DOES NOT CURRENTLY EXIST')
+
+if args.night != 'now':
+    night = args.night
+else:
+    night = util.get_obs_night_now()
+
+print('OBSERVING NIGHT IS : ' + night)
+
+def set_indir(night):
+    global args
+
+    indir = os.path.join(args.indir, night)
+
+    print('WATCHING FOR NEW FILES IN : ' + indir)
+
+    if not os.path.exists(indir):
+        print('WARNING: INPUT DIRECTORY DOES NOT CURRENTLY EXIST')
+    
+    return indir
+
+indir = set_indir(night)
 
 guider = args.guider
 
 print('BASE OUTPUT DIRECTORY : ')
 print(args.out_basedir)
 assert(os.path.exists(args.out_basedir))
-night_basedir_out = os.path.join(args.out_basedir, args.night)
-if not os.path.exists(night_basedir_out):
-    os.mkdir(night_basedir_out)
+
+out_basedir = args.out_basedir
+
+def set_night_basedir_out(night):
+    global out_basedir
+
+    night_basedir_out = os.path.join(out_basedir, night)
+    if not os.path.exists(night_basedir_out):
+        os.mkdir(night_basedir_out)
+
+    return night_basedir_out
+
+night_basedir_out = set_night_basedir_out(night)
 
 #- Create communication queue to pass files to workers
 q = mp.Queue()
@@ -89,7 +119,7 @@ q = mp.Queue()
 #- Function to run for each worker.
 #- Listens on Queue q for filenames to process.
 def run(workerid, q):
-    global night_basedir_out
+    global out_basedir
     print('Worker {} ready to go'.format(workerid))
     while True:
         image = q.get(block=True)
@@ -97,7 +127,7 @@ def run(workerid, q):
         print('Worker {} processing {}'.format(workerid, filename))
         sys.stdout.flush()
         #- Do something with that filename
-        outdir = os.path.join(night_basedir_out,
+        outdir = os.path.join(os.path.join(out_basedir, image.night),
                               str(expid_from_filename(filename)).zfill(8))
 
         if args.guider and (image.cube_index < 12):
@@ -141,8 +171,20 @@ print('Number of known files = ', len(known_files))
 #- to the queue for a worker to process.
 
 pattern = '????????/gfa*.fits.fz' if not guider else '????????/guide-????????.fits.fz'
-glob_pattern = os.path.join(indir, pattern)
+
 while(True):
+
+    if args.night == 'now':
+        night_now = util.get_obs_night_now(verbose=True)
+        if night_now != night:
+            print('UPDATING OBSERVING NIGHT FROM ' + night + \
+                  ' TO ' + night_now)
+            night = night_now
+            indir = set_indir(night)
+            night_basedir_out = set_night_basedir_out(night)
+    
+    glob_pattern = os.path.join(indir, pattern)
+
     flist = glob.glob(glob_pattern)
     flist.sort()
     flist = np.array(flist)
@@ -154,7 +196,7 @@ while(True):
                 print('Server putting {} in the queue'.format(filename))
                 sys.stdout.flush()
                 if not guider:
-                    image = ProcItem(filename, cube_index=None)
+                    image = ProcItem(filename, night, cube_index=None)
                     q.put(image)
                 else:
                     h = fits.getheader(filename, extname='GUIDER')
@@ -162,7 +204,7 @@ while(True):
                                           str(expid_from_filename(filename)).zfill(8))
                     os.mkdir(outdir) # avoids race condition in _proc ...
                     __cube_index = 1 if (h['FRAMES'] > 1) else 0
-                    image = ProcItem(filename, cube_index=__cube_index)
+                    image = ProcItem(filename, night, cube_index=__cube_index)
                     q.put(image)
             else:
                 print('skipping ' + filename + ' ; NOT flavor=science')

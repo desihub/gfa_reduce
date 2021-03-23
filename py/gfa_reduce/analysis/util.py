@@ -10,6 +10,7 @@ from scipy.optimize import minimize
 import gfa_reduce.xmatch.gaia as gaia
 from astropy.time import Time
 import astropy
+from datetime import datetime
 
 def use_for_fwhm_meas(tab, bad_amps=None, snr_thresh=20,
                       no_sig_major_cut=False):
@@ -891,3 +892,50 @@ def get_dq_flags(tab, bitmask):
     iys = [int(min(max(np.round(t['ycentroid']), ymin), ymax)) for t in tab]
 
     return bitmask[iys, ixs].astype('uint8')
+
+def get_obs_night(date_string_local, time_string_local):
+    # 'local' for KPNO means MST
+    # date_string_local should be something like 2020/11/08
+    # time_string_local should be something like 04:44:49
+
+    # strip spaces from date_string_local and time_string_local
+
+    date_string_local = date_string_local.replace(' ', '')
+    time_string_local = time_string_local.replace(' ', '')
+
+    assert(len(date_string_local) == 10)
+    assert(len(time_string_local) == 8)
+
+    hours = int(time_string_local[0:2])
+
+    # stipulate that observing night rolls over at noon local time
+    if hours >= 12:
+        return date_string_local.replace('/', '')
+    else:
+        # figure out what was the previous calendar date
+        fiducial_time_string = date_string_local.replace('/', '-') + 'T01:00:00'
+
+        t = Time(fiducial_time_string, scale='utc')
+
+        mjd_yesterday = t.mjd - 1.0
+
+        t_yesterday = Time(mjd_yesterday, scale='utc', format='mjd')
+
+        date_string_yesterday = (t_yesterday.iso)[0:10].replace('-', '')
+
+        #date_string_yesterday = t_yesterday.datetime64
+
+        return date_string_yesterday
+
+def get_obs_night_now(verbose=False):
+    now = datetime.now()
+
+    date_string_local = now.strftime("%Y/%m/%d")
+    time_string_local = now.strftime("%H:%M:%S")
+
+    obsnight = get_obs_night(date_string_local, time_string_local)
+
+    if verbose:
+        print(now, ' = observing night ', obsnight)
+    
+    return obsnight
