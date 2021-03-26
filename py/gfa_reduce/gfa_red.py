@@ -9,8 +9,10 @@ import gfa_reduce.common as common
 import gfa_reduce.analysis.recalib_astrom as wcs
 import gfa_reduce.analysis.dm as dm
 import time
-import desiutil.iers
-desiutil.iers.freeze_iers()
+
+if 'desi' not in os.environ['HOSTNAME']:
+    import desiutil.iers
+    desiutil.iers.freeze_iers()
 
 class ProcObj():
     def __init__(self, fname_in, gitrev):

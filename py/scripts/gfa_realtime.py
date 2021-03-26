@@ -175,7 +175,7 @@ pattern = '????????/gfa*.fits.fz' if not guider else '????????/guide-????????.fi
 while(True):
 
     if args.night == 'now':
-        night_now = util.get_obs_night_now(verbose=True)
+        night_now = util.get_obs_night_now(verbose=False)
         if night_now != night:
             print('UPDATING OBSERVING NIGHT FROM ' + night + \
                   ' TO ' + night_now)
