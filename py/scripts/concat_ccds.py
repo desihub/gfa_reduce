@@ -6,6 +6,7 @@ import glob
 import numpy as np
 import os
 import argparse
+from multiprocessing import Pool
 
 def _get_default_basedir(acq=False):
     basedir = os.environ['GFA_REDUX_BASE'] + '_' + \
@@ -82,7 +83,16 @@ def _nights_list(night_min, night_max, basedir=None, acq=False):
     nights.sort()
     return nights
 
-def _concat(night='20201214', basedir=None, acq=False, user_basedir=None):
+def _read_one_ccds_table(fname):
+    print('READING : ' + fname)
+    tab = fits.getdata(fname)
+    tab = Table(tab)
+    tab['fwhm_asec'] = tab['psf_fwhm_asec']
+
+    return tab
+
+def _concat(night='20201214', basedir=None, acq=False, user_basedir=None,
+            workers=1):
 
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
@@ -99,14 +109,10 @@ def _concat(night='20201214', basedir=None, acq=False, user_basedir=None):
 
     flist = glob.glob(pattern)
 
-    tables = []
-    for i, f in enumerate(flist):
-        print(i+1, ' of ', len(flist), ' : ', f)
-        tab = fits.getdata(f)
-        tab = Table(tab)
-        tab['fwhm_asec'] = tab['psf_fwhm_asec']
+    print('initializing pool with ' + str(workers) + ' workers')
+    p = Pool(workers)
     
-        tables.append(tab)
+    tables = p.map(_read_one_ccds_table, flist)
 
     result = vstack(tables)
 
@@ -120,7 +126,7 @@ def _concat(night='20201214', basedir=None, acq=False, user_basedir=None):
     return result
 
 def _concat_many_nights(night_min='20201214', night_max='99999999',
-                        basedir=None, acq=False, user_basedir=None):
+                        basedir=None, acq=False, user_basedir=None, workers=1):
 
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
@@ -143,7 +149,7 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
         print('Working on night ' + night + ' (' + str(i+1) + ' of ' +
               str(len(nights)) + ')')
         table = _concat(night=night, basedir=basedir, acq=acq,
-                        user_basedir=user_basedir)
+                        user_basedir=user_basedir, workers=workers)
         tables.append(table)
 
     result = vstack(tables)
@@ -161,7 +167,7 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
 
 def _write_many_nights(night_min='20201214', night_max='99999999',
                        basedir=None, acq=False, phase='SV1',
-                       outdir='.', user_basedir=None):
+                       outdir='.', user_basedir=None, workers=1):
 
     if not os.path.exists(outdir):
         print('output directory does not exists ... quitting')
@@ -173,7 +179,8 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
     result, med, _med = _concat_many_nights(night_min=night_min,
                                             night_max=night_max,
                                             basedir=basedir, acq=acq,
-                                            user_basedir=user_basedir)
+                                            user_basedir=user_basedir,
+                                            workers=workers)
 
     cube_index = 0 if acq else -1
     if (np.sum(result['CUBE_INDEX'] != cube_index) > 0) or (np.sum(med['CUBE_INDEX'] != cube_index) > 0) or (np.sum(_med['CUBE_INDEX'] != cube_index) > 0):
@@ -220,9 +227,16 @@ if __name__=="__main__":
     parser.add_argument('--my_redux_dir', default=None, type=str,
                         help='base directory for your gfa_reduce outputs')
 
+    parser.add_argument('--workers', default=1, type=int,
+                        help='number of concurrent read-in processes')
+
     args = parser.parse_args()
 
+    if (args.workers < 1) or (args.workers > 32):
+        print('bad number of workers specified')
+    
     _write_many_nights(night_min=args.night_min, night_max=args.night_max,
                        basedir=args.basedir, acq=args.acq, phase=args.phase,
-                       outdir=args.outdir, user_basedir=args.my_redux_dir)
+                       outdir=args.outdir, user_basedir=args.my_redux_dir,
+                       workers=args.workers)
 
