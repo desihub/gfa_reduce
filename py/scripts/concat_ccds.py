@@ -30,9 +30,16 @@ def cube_index_median(tab, extra_cuts=False, matched_coadd=True):
 
     tab = tab[np.logical_not(bad)]
     
+    _id = np.array([str(tab[i]['EXPID']).zfill(8) + str(tab[i]['CUBE_INDEX']).zfill(5) + tab[i]['EXTNAME'] for i in range(len(tab))])
+
+    sind = np.argsort(_id)
+    _id = _id[sind]
+    tab = tab[sind]
+    del sind
+
     _id = np.array([str(tab[i]['EXPID']).zfill(8) + str(tab[i]['CUBE_INDEX']).zfill(5) for i in range(len(tab))])
 
-    ids_u = np.unique(_id)
+    ids_u, ind_u = np.unique(_id, return_index=True)
 
     cols_to_median = ['MJD', 'FWHM_ASEC', 'TRANSPARENCY', 'SKY_MAG_AB',
                       'FIBER_FRACFLUX', 'FIBER_FRACFLUX_ELG',
@@ -42,8 +49,11 @@ def cube_index_median(tab, extra_cuts=False, matched_coadd=True):
         cols_to_median += ['FIBERFAC', 'FIBERFAC_ELG', 'FIBERFAC_BGS']
     
     rows = []
-    for id_u in ids_u:
-        _tab = tab[_id == id_u]
+    for i, ind in enumerate(ind_u):
+        ind_lower = ind
+        ind_upper = ind_u[i+1] if (i != (len(ind_u)-1)) else len(tab)
+
+        _tab = tab[ind_lower:ind_upper]
 
         row = Table()
 
@@ -161,6 +171,7 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
     print('assembling per-frame median extension with minimal quality cuts...')
     med = cube_index_median(result, matched_coadd=(not acq))
     print('assembling per-frame median extension with additional quality cuts...')
+
     _med = cube_index_median(result, extra_cuts=True, matched_coadd=(not acq))
     
     return result, med, _med
