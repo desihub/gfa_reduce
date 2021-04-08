@@ -26,6 +26,14 @@ def load_image_from_hdu(hdu, verbose=True, cube_index=None, store_detmap=False,
 
     header = hdu.header
 
+
+    # if not a guide cube, try doing a quick initial check on image
+    # dimensions (trying to address edge case of EXPID = 83744 from 20210406
+    if cube_index is None:
+        if (header['NAXIS1'] != 2248) or (header['NAXIS2'] != 1032):
+            print('WRONGLY SHAPED RAW IMAGE: ', header['EXTNAME'])
+            return None
+
     # hack for PlateMaker acquisition image file format
     if 'SKYRA' not in header:
         header['SKYRA'] = exp_header['SKYRA'] if 'SKYRA' in exp_header else exp_header['REQRA']
@@ -194,7 +202,15 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
         coadd_ind_ranges = [None]*len(w_im)
             
     try:
-        imlist = [load_image_from_hdu(hdul[ind], verbose=verbose, cube_index=cube_index, store_detmap=store_detmap, exp_header=exp_header, coadd_index_range=coadd_ind_ranges[i]) for i, ind in enumerate(w_im)]
+        imlist = []
+        for i, ind in enumerate(w_im):
+            _im = load_image_from_hdu(hdul[ind], verbose=verbose, cube_index=cube_index, store_detmap=store_detmap, exp_header=exp_header, coadd_index_range=coadd_ind_ranges[i])
+            if _im is not None:
+                imlist.append(_im)
+
+        if len(imlist) == 0:
+            print('NO VALID RAW DATA??')
+            assert(False)
     except Exception as e:
         print('failed to load exposure at image list creation stage')
         print(e)

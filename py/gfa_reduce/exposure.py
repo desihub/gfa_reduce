@@ -15,7 +15,9 @@ class GFA_exposure:
         # images is a dictionary of GFA_image objects
 
         par = common.gfa_misc_params()
-        self.images = dict(zip(common.valid_image_extname_list(), 
+        _extnames = [_im.header['EXTNAME'] for _im in image_list]
+        _extnames.sort()
+        self.images = dict(zip(_extnames, 
                                par['n_cameras']*[None]))
 
         self.dark_current_objs = dict(zip(common.valid_image_extname_list(), 
