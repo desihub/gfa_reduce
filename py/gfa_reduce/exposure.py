@@ -310,10 +310,21 @@ class GFA_exposure:
     def assign_input_filename(self, fname_in):
         self.fname_in = fname_in
 
+    def _trim_pmgstars(self):
+        # remove PMGSTARS table rows that pertain to a camera
+        # not actually present in the guide cube
+        # example is GUIDE3 in EXPID = 83995 on night 20210408
+
+        keep = np.zeros(len(self.pmgstars), dtype=bool)
+        for extname in self.images.keys():
+            keep[self.pmgstars['GFA_LOC'] == extname] = True
+
+        self.pmgstars = self.pmgstars[keep]
+
     def pmgstars_dq_flags(self):
         # gather dq_flags for PMGSTARS table source positions
 
-        extnames = np.unique(self.pmgstars['GFA_LOC'])
+        extnames = self.images.keys()
 
         dq_flags = np.zeros(len(self.pmgstars), dtype='uint8')
 
@@ -387,6 +398,7 @@ class GFA_exposure:
 
         # decide which stars to retain for the forced photometry analysis
 
+        self._trim_pmgstars()
         self.pmgstars_dq_flags()
         
         good = (self.pmgstars['median_1_'] > 0) & (self.pmgstars['ang_sep_deg'] < 2.0/3600.0) & (self.pmgstars['min_edge_dist_pix'] >= 10) & (self.pmgstars['dq_flags'] == 0)
