@@ -11,6 +11,10 @@ import gfa_reduce.xmatch.gaia as gaia
 from astropy.time import Time
 import astropy
 from datetime import datetime
+from photutils import aperture_photometry
+from photutils import CircularAperture, CircularAnnulus, EllipticalAperture
+import photutils
+from astropy.stats import sigma_clipped_stats
 
 def use_for_fwhm_meas(tab, bad_amps=None, snr_thresh=20,
                       no_sig_major_cut=False):
@@ -424,44 +428,30 @@ def _fiber_fracflux(psf, x_centroid=None, y_centroid=None,
     # not really sure if this edge case will ever happen ??
     if (np.sum(psf) <= 0):
         return np.nan, np.nan, np.nan
-        
-    binfac = 11
 
     if fib_rad_pix is None:
-        # the 1.52/1.462 factor comes from David Schlegel's request
-        # to have gfa_reduce fiber flux fraction related quantities
-        # be referenced to a 1.52 asec diameter aperture, even though
-        # the angular diameter corresponding to a 107 um fiber at the
-        # GFA focal plane position is smaller (1.462 asec using GFA
-        # platescale geometric mean); see SurveySpeed wiki page for 1.52 value
-        fib_diam = (107.0/15.0)*(1.52/1.462) # GFA pixels
+        fib_rad_pix = 3.567*(1.52/1.462) # pixels
 
-        fib_rad = fib_diam/2.0 # GFA pixels
-    else:
-        fib_rad = fib_rad_pix
+    position = (x_centroid, y_centroid)
 
-    sidelen = psf.shape[0] # assume square..
+    aperture = CircularAperture(position, r=fib_rad_pix)
+    annulus_aperture = CircularAnnulus(position, r_in=25.0, r_out=40.0)
+    annulus_mask = annulus_aperture.to_mask(method='center')
 
-    if x_centroid is not None:
-        x_centroid *= binfac
-    if y_centroid is not None:
-        y_centroid *= binfac
+    annulus_data = annulus_mask.multiply(psf)
+    annulus_data_1d = annulus_data[annulus_mask.data > 0]
 
-    mask, radius = _stamp_radius_mask(sidelen*binfac, return_radius=True,
-                                      x_centroid=x_centroid,
-                                      y_centroid=y_centroid)
+    _, bkg_median, std_bg = sigma_clipped_stats(annulus_data_1d)
+
+    phot = aperture_photometry(psf, aperture)
+
+    aper_bkg_tot = bkg_median*_get_area_from_ap(aperture)
+
+    numerator = phot['aperture_sum'][0] - aper_bkg_tot # aper flux
+    denominator = np.sum(psf)
     
-    _psf = _resize(psf, binfac)
-
-    _mask = np.logical_not(mask)
-
-    in_fiber = (radius <= fib_rad*binfac)
-
-    numerator = np.sum(_psf*_mask*in_fiber) # PSF flux within fiber aperture
-    denominator = np.sum(_psf*_mask) # total PSF flux
-
     frac = numerator/denominator
-
+        
     return frac, numerator, denominator
 
 def _aperture_corr_fac(psf, x_centroid=None, y_centroid=None):
@@ -939,3 +929,13 @@ def get_obs_night_now(verbose=False):
         print(now, ' = observing night ', obsnight)
     
     return obsnight
+
+def _get_area_from_ap(ap):
+    # this is to try and work around the photutils API change
+    # between versions 0.6 and 0.7
+    if photutils.__version__.find('0.7') != -1:
+        area = ap.area # 0.7
+    else:
+        area = ap.area() # 0.6
+
+    return area

@@ -1,4 +1,5 @@
 import gfa_reduce.analysis.util as util
+from gfa_reduce.analysis.util import _get_area_from_ap
 from astropy.stats import mad_std
 from scipy.ndimage.filters import gaussian_filter
 from scipy import ndimage
@@ -72,17 +73,6 @@ def detmap_centroids(tab, detmap, max_cbox=31):
     tab['ycen_detmap_fw'] = results['y_djs']
 
     return tab
-
-def _get_area_from_ap(ap):
-    # this is to try and work around the photutils API change
-    # between versions 0.6 and 0.7
-    if photutils.__version__.find('0.7') != -1:
-        area = ap.area # 0.7
-    else:
-        area = ap.area() # 0.6
-
-    return area
-
 
 def detection_map(im, fwhm):
     psf_sigma = fwhm/2.355

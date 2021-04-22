@@ -55,7 +55,9 @@ class PSF:
         # I want the aperture correction factor to have any
         # average off-centering baked in to correct for any such
         # off-centering in the catalog aperture fluxes
-        self.aper_corr_fac = util._aperture_corr_fac(self.psf_image)
+        self.aper_corr_fac = util._aperture_corr_fac(self.psf_image,
+                                                     x_centroid=float(self.sidelen // 2),
+                                                     y_centroid=float(self.sidelen // 2))
 
         self.fiber_fracflux, _, psf_tot_flux = util._fiber_fracflux(self.psf_image,
                                                                     x_centroid=self.xcen_flux_weighted,
