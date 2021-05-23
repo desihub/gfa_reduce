@@ -939,3 +939,26 @@ def _get_area_from_ap(ap):
         area = ap.area() # 0.6
 
     return area
+
+def _subselect_bintable_rows(tab):
+    # tab should be a guide cube binary table
+    # (from extension name like GUIDE2T)
+
+    # the purpose of this function is to remove any
+    # duplicated rows in this table, by downselecting
+    # to only the set of rows with unique MJD-OBS
+    # (this function will crash if somehow tab is corrupt or
+    # not a table-like structure or MJD-OBS is missing)
+
+    # this was put into place due to replication of 
+    # guide cube binary table rows on observing night
+    # 20210519
+
+    mjd_u, ind_u = np.unique(tab['MJD-OBS'], return_index=True)
+
+    if len(mjd_u) == len(tab):
+        return tab
+
+    tab = tab[ind_u]
+
+    return tab

@@ -194,7 +194,8 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
             extname_im = hdul[ind].header['EXTNAME'].strip()
             extname_tab = extname_im + 'T'
             # this will crash if the binary table extension is missing...
-            bintables[extname_im] = hdul[extname_tab].data
+            _bintable = hdul[extname_tab].data
+            bintables[extname_im] = util._subselect_bintable_rows(_bintable)
             coadd_ind_ranges.append(util.coadd_cube_index_range(bintables[extname_im], cube_index, mjdrange))
         if _has_extension_name(hdul, extname='PMGSTARS'):
             pmgstars = Table(hdul['PMGSTARS'].data)
