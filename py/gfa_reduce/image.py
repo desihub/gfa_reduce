@@ -752,8 +752,13 @@ class GFA_image:
         # require something about minimum edge distance
         # cut on dq_flags
         
-        good = (ps1_matched_catalog['median_1_'] > 0) & (ps1_matched_catalog['camera'] == self.extname) & (ps1_matched_catalog['detmap_peak'] >= 10) & (ps1_matched_catalog['ang_sep_deg'] < 2.0/3600.0) & (ps1_matched_catalog['aper_sum_bkgsub_3'] > 0) & (ps1_matched_catalog['min_edge_dist_pix'] >= 10) & (ps1_matched_catalog['dq_flags'] == 0)
+        good = ps1_matched_catalog['use_for_zp'] & (ps1_matched_catalog['camera'] == self.extname)
 
+        # if I instead required > 1 star for zeropoint
+        # estimation, that could cause rare confusing situations
+        # in terms of the PS1 cross-match table's use_for_zp values
+        # (a camera with exactly 1 use_for_zp = True star would have
+        #  actually not used that star for zeropoint estimation)
         if np.sum(good) == 0:
             return np.nan
 

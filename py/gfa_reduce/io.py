@@ -462,6 +462,13 @@ def get_ps1_matches(catalog, exp):
 
         exp.pmgstars = hstack([exp.pmgstars, ps1])
 
+    # add a boolean column labeling whether each match is suitable
+    # for including in the r-band zeropoint measurement
+
+    use_for_zp = (ps1_matches['median_1_'] > 0) & (ps1_matches['detmap_peak'] >= 10) & (ps1_matches['ang_sep_deg'] < 2.0/3600.0) & (ps1_matches['aper_sum_bkgsub_3'] > 0) & (ps1_matches['min_edge_dist_pix'] >= 10) & (ps1_matches['dq_flags'] == 0)
+
+    ps1_matches['use_for_zp'] = use_for_zp
+
     return ps1_matches
     
 def write_ps1_matches(ps1_matches, outdir, fname_in, cube_index=None):
@@ -487,6 +494,12 @@ def write_ps1_matches(ps1_matches, outdir, fname_in, cube_index=None):
                                   '-' + str(cube_index).zfill(5) + '.fits')
     
     assert(not os.path.exists(outname))
+
+    # change use_for_zp column to be 0/1 rather than
+    # boolean (boolean ends up as string 'T'/'F', which
+    # I dont like)
+    if 'use_for_zp' in ps1_matches.colnames:
+        ps1_matches['use_for_zp'] = ps1_matches['use_for_zp'].astype('int16')
 
     _atomic_write(ps1_matches, outname)
     
@@ -881,6 +894,8 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     tab['airmass_per_gfa'] = 1.0/np.cos(tab['zd_deg_per_gfa']/(180.0/np.pi))
     
     tab['zp_adu_per_s'] = [exp.images[extname].compute_zeropoint(ps1) for extname in tab['camera']]
+
+    tab['n_stars_for_zp'] = [(np.sum(ps1['use_for_zp'] & (ps1['extname'] == extname)).astype(int) if 'use_for_zp' in ps1.colnames else 0) for extname in tab['camera']]
 
     tab['transparency'] = [util.transparency_from_zeropoint(tab[i]['zp_adu_per_s'], tab[i]['airmass_per_gfa'], tab[i]['camera']) for i in range(len(tab))]
 
