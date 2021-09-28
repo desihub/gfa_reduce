@@ -124,6 +124,9 @@ def _concat(night='20201214', basedir=None, acq=False, user_basedir=None,
     
     tables = p.map(_read_one_ccds_table, flist)
 
+    p.close()
+    p.join()
+
     result = vstack(tables)
 
     # for matched coadds during SV1 this is always true...
