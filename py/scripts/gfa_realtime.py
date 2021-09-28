@@ -39,11 +39,14 @@ parser.add_argument("--indir", type=str, default=dts_raw,
 args = parser.parse_args()
 
 class ProcItem:
-    def __init__(self, fname_raw, night, cube_index=None):
+    # need to add MJDMIN, MJDMAX here for matched coaddition case
+    def __init__(self, fname_raw, night, cube_index=None, mjdmin=None, mjdmax=None):
         self.fname_raw = fname_raw
         self.cube_index = cube_index
         self.is_guider_cube = cube_index is not None
         self.night = night
+        self.mjdmin = mjdmin
+        self.mjdmax = mjdmax
 
     def _cube_index_string(self):
         if self.is_guider_cube:
@@ -130,15 +133,15 @@ def run(workerid, q):
         outdir = os.path.join(os.path.join(out_basedir, image.night),
                               str(expid_from_filename(filename)).zfill(8))
 
-        if args.guider and (image.cube_index < 12):
+        if args.guider:
             print('sleeping for 1 minute to avoid bad DTS links')
-            time.sleep(60.0) # hack to deal with bad DTS links
+            ### time.sleep(60.0) # hack to deal with bad DTS links
 
         try:
             if not args.focus:
                 _proc(filename, outdir=outdir, realtime=True,
                       cube_index=image.cube_index, skip_image_outputs=True,
-                      skip_raw_imstats=True)
+                      skip_raw_imstats=False, pmgstars=True, mjdmin=image.mjdmin, mjdmax=image.mjdmax)
             else:
                 _proc(filename, outdir=outdir, realtime=True,
                       cube_index=image.cube_index, skip_image_outputs=True,
@@ -160,7 +163,7 @@ for i in range(args.numworkers):
 #- TODO: Upon startup, this could compare against files in output dir
 #- and only load input files haven't already been processed.
 exp_outdirs = glob.glob(night_basedir_out + '/????????')
-prefix = 'guide-' if guider else 'gfa-'
+prefix = 'desi-' if guider else 'gfa-'
 # this will not work correctly for cases where some subset of slices of a guide cube have been processed...
 known_files = set([indir + '/' + os.path.split(d)[-1] + '/' + prefix + \
                    os.path.split(d)[-1] + '.fits.fz' for d in exp_outdirs])
@@ -170,7 +173,7 @@ print('Number of known files = ', len(known_files))
 #- Periodically check for any new files that may have appeared and add them
 #- to the queue for a worker to process.
 
-pattern = '????????/gfa*.fits.fz' if not guider else '????????/guide-????????.fits.fz'
+pattern = '????????/gfa*.fits.fz' if not guider else '????????/desi-????????.fits.fz'
 
 while(True):
 
@@ -199,12 +202,29 @@ while(True):
                     image = ProcItem(filename, night, cube_index=None)
                     q.put(image)
                 else:
-                    h = fits.getheader(filename, extname='GUIDER')
+                    # should put in a pause here
+                    fname_guide = filename.replace('desi-', 'guide-')
+                    if not os.path.exists(fname_guide):
+                        print('spectro file has no corresponding guide cube : ' + filename)
+                        known_files.add(filename)
+                        continue
+                    
+                    h_spec = fits.getheader(filename, extname='SPEC')
+
+                    mjdmin = h_spec['MJD-OBS']
+                    mjdmax = h_spec['MJD-OBS'] + h_spec['EXPTIME']/(3600.0*24.0)
+
+                    h = fits.getheader(fname_guide, extname='GUIDER')
                     outdir = os.path.join(night_basedir_out,
-                                          str(expid_from_filename(filename)).zfill(8))
+                                          str(expid_from_filename(fname_guide)).zfill(8))
+
+                    if (h['FRAMES'] <= 1):
+                        print('too few frames for matched coaddition : ' + fname_guide)
+                        known_files.add(filename)
+                        continue
+                    __cube_index = -1
                     os.mkdir(outdir) # avoids race condition in _proc ...
-                    __cube_index = 1 if (h['FRAMES'] > 1) else 0
-                    image = ProcItem(filename, night, cube_index=__cube_index)
+                    image = ProcItem(fname_guide, night, cube_index=__cube_index, mjdmin=mjdmin, mjdmax=mjdmax)
                     q.put(image)
             else:
                 print('skipping ' + filename + ' ; NOT flavor=science')
