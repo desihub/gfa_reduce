@@ -119,6 +119,9 @@ def _concat(night='20201214', basedir=None, acq=False, user_basedir=None,
 
     flist = glob.glob(pattern)
 
+    if len(flist) == 0:
+        return None
+
     print('initializing pool with ' + str(workers) + ' workers')
     p = Pool(workers)
     
@@ -163,6 +166,8 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
               str(len(nights)) + ')')
         table = _concat(night=night, basedir=basedir, acq=acq,
                         user_basedir=user_basedir, workers=workers)
+        if table is None:
+            continue
         tables.append(table)
 
     result = vstack(tables)
@@ -211,6 +216,10 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
               night + '.fits'
 
     outname = os.path.join(outdir, outname)
+
+    if os.path.exists(outname):
+        print('summary file already exists !!!')
+        return
 
     print('attempting to write multi-extension FITS output to ' + outname)
     hdul.writeto(outname)
