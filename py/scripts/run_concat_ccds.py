@@ -1,9 +1,10 @@
-
+import os
 import concat_ccds
 import time
 from datetime import datetime
 
-outdir = '/n/home/datasystems/users/ameisner/GFA'
+#outdir = '/n/home/datasystems/users/ameisner/GFA'
+outdir = os.environ['GFA_SUMMRY_FILE_DIR']
 workers = 6
 
 basedir = concat_ccds._get_default_basedir(acq=False)
