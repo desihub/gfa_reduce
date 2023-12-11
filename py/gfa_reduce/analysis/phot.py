@@ -6,7 +6,8 @@ from scipy import ndimage
 import numpy as np
 from scipy.ndimage.measurements import label, find_objects
 from astropy.table import Table
-from photutils.centroids.core import fit_2dgaussian
+#from photutils.centroids.core import fit_2dgaussian
+from gfa_reduce.analysis.gaussian import fit_2dgaussian
 from astropy.stats import sigma_clipped_stats
 from photutils import aperture_photometry
 from photutils import CircularAperture, CircularAnnulus, EllipticalAperture
