@@ -7,6 +7,7 @@ import numpy as np
 import os
 import argparse
 from multiprocessing import Pool
+import datetime
 
 def _get_default_basedir(acq=False):
     basedir = os.environ['GFA_REDUX_BASE'] + '_' + \
@@ -209,6 +210,118 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
                               fits.BinTableHDU(data=result),
                               fits.BinTableHDU(data=med),
                               fits.BinTableHDU(data=_med)])
+
+    night = str(np.max(result['NIGHT']))
+    flavor = 'matched_coadd' if not acq else 'acq'
+    outname = 'offline_' + flavor + '_ccds_' + phase + '-thru_' + \
+              night + '.fits'
+
+    outname = os.path.join(outdir, outname)
+
+    if os.path.exists(outname):
+        print('summary file already exists !!!')
+        return
+
+    print('attempting to write multi-extension FITS output to ' + outname)
+    hdul.writeto(outname)
+    os.system('chgrp desi ' + outname)
+    os.system('chmod ug-w ' + outname)
+    os.system('chmod a+r ' + outname)
+    print('done')
+
+def _latest_summary_file(outdir='.'):
+    
+    files = glob.glob(outdir + '/offline_matched_coadd_ccds_SV3-thru_????????.fits')
+
+    files = np.array([os.path.splitext(f)[0] for f in files])
+
+    nights = np.array([int(f.split("_")[-1]) for f in files])    
+
+    latest_summary_file = files[np.argmax(nights)]+'.fits'
+    
+    latest_night = str(nights[np.argmax(nights)])
+    
+    return latest_summary_file, latest_night
+
+def _next_obsnight(night='00000000'):
+
+    assert(len(night) == 8)
+
+    d = datetime.date.fromisoformat(night[0:4]+'-'+night[4:6]+'-'+night[6:8])
+
+    delta = datetime.timedelta(days=1)
+
+    next_obsnight = datetime.date.isoformat(d+delta)
+
+    next_obsnight = next_obsnight.replace("-","")
+    
+    return next_obsnight
+
+def _load_concas_ccds_file(file):
+    
+    hdul=fits.open(file)
+
+    result = Table(hdul[1].data)
+    med = Table(hdul[2].data)
+    _med = Table(hdul[3].data)
+
+    return result, med, _med
+
+def _append_many_nights(night_min='20201214', night_max='99999999',
+                       basedir=None, acq=False, phase='SV1',
+                       outdir='.', user_basedir=None, workers=1):
+
+    if not os.path.exists(outdir):
+        print('output directory does not exists ... quitting')
+        return
+
+    # Find the most recent daily summary file in the output dir
+    latest_summary_file, latest_night = _latest_summary_file(outdir=outdir)
+    print('The latest daily summary file includes data through '+latest_night)
+
+    next_obsnight = _next_obsnight(night=latest_night)
+
+    # Check for new data
+    nights = _nights_list(night_min, night_max, basedir=basedir, acq=acq)
+
+    if len(nights) == 0:
+        print('Error: no reduced GFA data found in '+basedir)
+        return
+    
+    if nights[-1] < next_obsnight:
+        print('Quitting... No new GFA data on or after '+next_obsnight)
+        return
+
+    # Get the content of the most recent daily summary file
+    print('Loading '+latest_summary_file)
+    existingResult, existingMed, existing_Med = _load_concas_ccds_file(latest_summary_file)
+
+    # Read in new data 
+
+    if basedir is None:
+        basedir = _get_default_basedir(acq=acq)
+
+    result, med, _med = _concat_many_nights(night_min=next_obsnight,
+                                            night_max=nights[-1],
+                                            basedir=basedir, acq=acq,
+                                            user_basedir=user_basedir,
+                                            workers=workers)
+
+    cube_index = 0 if acq else -1
+    if (np.sum(result['CUBE_INDEX'] != cube_index) > 0) or (np.sum(med['CUBE_INDEX'] != cube_index) > 0) or (np.sum(_med['CUBE_INDEX'] != cube_index) > 0):
+        print('WARNING: wrong CUBE_INDEX detected')
+
+    # Combine old and new records
+    new_result = vstack([existingResult, result])
+    new_med = vstack([existingMed, med])
+    new__med = vstack([existing_Med, _med])
+
+    # save
+    
+    hdul = fits.HDUList(hdus=[fits.PrimaryHDU(),
+                              fits.BinTableHDU(data=new_result),
+                              fits.BinTableHDU(data=new_med),
+                              fits.BinTableHDU(data=new__med)])
 
     night = str(np.max(result['NIGHT']))
     flavor = 'matched_coadd' if not acq else 'acq'
