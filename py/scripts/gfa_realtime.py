@@ -16,7 +16,8 @@ import gfa_reduce.analysis.util as util
 # https://raw.githubusercontent.com/sbailey/multirunner/master/multirunner.py
 
 default_out_basedir = os.environ['DEFAULT_REDUX_DIR']
-dts_raw = os.environ['DTS_RAW']
+# dts_raw = os.environ['DTS_RAW']
+dts_raw = os.environ['DESI_SPECTRO_DATA']
 
 parser = argparse.ArgumentParser(usage = "{prog} [options]")
 parser.add_argument("--night", type=str, default='now',
@@ -60,7 +61,7 @@ def check_flavor_json(gfa_image_fname):
 
     print(gfa_json_fname)
     assert(os.path.exists(gfa_json_fname))
- 
+
     with open(gfa_json_fname) as json_file:
         data = json.load(json_file)
 
@@ -92,7 +93,7 @@ def set_indir(night):
 
     if not os.path.exists(indir):
         print('WARNING: INPUT DIRECTORY DOES NOT CURRENTLY EXIST')
-    
+
     return indir
 
 indir = set_indir(night)
@@ -185,7 +186,7 @@ while(True):
             night = night_now
             indir = set_indir(night)
             night_basedir_out = set_night_basedir_out(night)
-    
+
     glob_pattern = os.path.join(indir, pattern)
 
     flist = glob.glob(glob_pattern)
@@ -208,7 +209,7 @@ while(True):
                         print('spectro file has no corresponding guide cube : ' + filename)
                         known_files.add(filename)
                         continue
-                    
+
                     h_spec = fits.getheader(filename, extname='SPEC')
 
                     mjdmin = h_spec['MJD-OBS']

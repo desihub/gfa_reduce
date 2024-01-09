@@ -14,7 +14,8 @@ import gfa_reduce.gfa_red as gfa_red
 out_basedir = 'gfa_redux'
 
 basedir = os.environ['DESI_SPECTRO_DATA']
-lostfound = os.environ['DESI_LOST_FOUND']
+# lostfound = os.environ['DESI_LOST_FOUND']
+lostfound = os.path.join(os.environ['DESI_ROOT'], 'spectro', 'staging', 'lost+found')
 
 def _search_dirs():
     return [basedir, lostfound]
@@ -42,9 +43,9 @@ def _spectro_list(night):
 # this is the list of guide-????????.fits.fz files corresponding to a
 # desi-????????.fits.fz spectro file
 def _guider_list(spectro_flist):
-    
+
     flist_pred = [s.replace('desi-', 'guide-') for s in spectro_flist]
-    
+
     result = []
 
     search_dirs = _search_dirs()
@@ -88,7 +89,7 @@ def _acq_list(night):
         result = result + flist
 
     return result
-    
+
 def _one_command(fname, night, out_basedir=out_basedir,
                  background=False, mjdrange=None, fieldmodel=False,
                  pmgstars=True, make_exp_outdir=True,
@@ -229,7 +230,7 @@ def _launch_scripts(night, match_spectro_mjd=True, out_basedir=out_basedir,
     print(str(len(cmds_acq)) + ' acquisition images to run')
 
     cmds = cmds + cmds_acq
-    
+
     random.seed(99)
     random.shuffle(cmds)
 
@@ -256,7 +257,7 @@ def _launch_scripts(night, match_spectro_mjd=True, out_basedir=out_basedir,
         with open(fname, 'wb') as f:
             print('writing chunk script ' + str(i+1) + ' ' +
                   ' of ' + str(n_scripts) + ' ' + fname)
-       	    for cmd in cmds[indstart:indend]:
+            for cmd in cmds[indstart:indend]:
                 f.write((cmd + '\n').encode('ascii'))
 
         f.close()
