@@ -171,6 +171,9 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
             continue
         tables.append(table)
 
+    if tables == []:
+        return -1, -1, -1
+
     result = vstack(tables)
 
     sind = np.argsort(result['EXPID'] + 0.1*result['PETAL_LOC'])
@@ -307,6 +310,10 @@ def _append_many_nights(night_min='20201214', night_max='99999999',
                                             user_basedir=user_basedir,
                                             workers=workers)
 
+    if result == -1:
+        print('No new GFA image found!')
+        return
+    
     cube_index = 0 if acq else -1
     if (np.sum(result['CUBE_INDEX'] != cube_index) > 0) or (np.sum(med['CUBE_INDEX'] != cube_index) > 0) or (np.sum(_med['CUBE_INDEX'] != cube_index) > 0):
         print('WARNING: wrong CUBE_INDEX detected')
