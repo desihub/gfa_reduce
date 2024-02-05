@@ -16,7 +16,9 @@ import gfa_reduce
 # revised from Aaron Meisner's gfa_realtime.py
 
 default_out_basedir = os.environ['DEFAULT_REDUX_DIR']
-dts_raw = os.environ['DTS_RAW']
+# dts_raw = os.environ['DTS_RAW']
+dts_raw = os.environ['DESI_SPECTRO_DATA']
+
 
 class ProcItem:
     # need to add MJDMIN, MJDMAX here for matched coaddition case
@@ -40,7 +42,7 @@ def _check_flavor_json(gfa_image_fname):
 
     print(gfa_json_fname)
     assert(os.path.exists(gfa_json_fname))
- 
+
     with open(gfa_json_fname) as json_file:
         data = json.load(json_file)
 
@@ -56,7 +58,7 @@ def _set_indir(night, indir_base):
 
     if not os.path.exists(indir):
         print('WARNING: INPUT DIRECTORY DOES NOT CURRENTLY EXIST')
-    
+
     return indir
 
 def _set_night_basedir_out(night, out_basedir):
@@ -147,7 +149,7 @@ def _gfa_single_night(night='20210405', numworkers=8,
 
     pattern = '????????/gfa*.fits.fz' if not guider else '????????/desi-????????.fits.fz'
 
-    
+
     glob_pattern = os.path.join(night_indir, pattern)
 
     flist = glob.glob(glob_pattern)
@@ -173,7 +175,7 @@ def _gfa_single_night(night='20210405', numworkers=8,
                         print('spectro file has no corresponding guide cube : ' + filename)
                         known_files.add(filename)
                         continue
-                    
+
                     h_spec = fits.getheader(filename, extname='SPEC')
 
                     mjdmin = h_spec['MJD-OBS']
@@ -209,7 +211,7 @@ def _gfa_single_night(night='20210405', numworkers=8,
         procs.append(p)
         p.start()
 
-# wait for the queue to be emptied    
+# wait for the queue to be emptied
     while(not q.empty()):
         time.sleep(5)
 
@@ -218,7 +220,7 @@ def _gfa_single_night(night='20210405', numworkers=8,
         proc.join()
 
     dt = time.time() - t0
-    
+
     print('gfa_single_night took ' + '{:.2f}'.format(dt) + ' seconds')
     print('Number of parallel processes used: ', len(procs))
     print('Number of GFA guide images processed: ', num_processed)
@@ -248,7 +250,7 @@ if __name__=="__main__":
 
     if (args.numworkers < 1) or (args.numworkers > 32):
         print('bad numworkers specified')
-    
+
     _gfa_single_night(night=args.night, numworkers=args.numworkers,
                       out_basedir=args.out_basedir, guider=args.guider, focus=args.focus,
                       indir=args.indir)
