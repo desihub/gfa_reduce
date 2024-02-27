@@ -172,7 +172,7 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
 
     tables = []
     for i, night in enumerate(nights):
-        log.info('Working on night %d (%d of %d).', night, i+1, len(nights))
+        log.info('Working on night %s (%d of %d).', night, i+1, len(nights))
         table = _concat(night=night, basedir=basedir, acq=acq,
                         user_basedir=user_basedir, workers=workers)
         if table is None:
