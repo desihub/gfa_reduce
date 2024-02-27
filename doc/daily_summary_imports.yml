@@ -132,6 +132,7 @@ daily_summary imports:
                         - gfa_reduce.common imports:
                             - None
             - gfa_reduce.analysis.dm imports:
-                - gfa_reduce.io POTENTIALLY CIRCULAR IMPORT
+                - gfa_reduce.common imports:
+                    - None
             - gfa_reduce.common imports:
                 - None

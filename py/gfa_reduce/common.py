@@ -1,11 +1,11 @@
-import numpy as np
 import os
+import subprocess as sub
 
 # could add utilities re: rotation relative to CS5
 
 def gfa_misc_params():
     """
-    repository for various constant values that I don't want to 
+    repository for various constant values that I don't want to
     end up hardcoding in various places throughout the code base
     """
 
@@ -23,12 +23,12 @@ def gfa_misc_params():
            'nominal_zeropoint': 27.0621,
            'gfa_exp_extname': 'GFA',
            'guider_exp_extname' : 'GUIDER',
-           'master_bias_filename': 'GFA_master_bias-overscan_subtracted.fits', 
+           'master_bias_filename': 'GFA_master_bias-overscan_subtracted.fits',
            'master_flat_filename': 'flat_LED_5s_20200115-all.fits',
            'master_dark_filename' : 'master_dark_library/master_dark-00026584_00026684.fits',
            'dark_index_filename' : 'master_dark_index-20200128.fits',
            'static_mask_filename': 'GFA_static_badpixels.fits',
-           'nominal_sag_cd': (5.0/3.0)*3.55978e-5, 
+           'nominal_sag_cd': (5.0/3.0)*3.55978e-5,
            'nominal_mer_cd': (5.0/3.0)*3.26627e-5,
            'nominal_cen_cd': (5.0/3.0)*3.70303e-5,
            'full_well_electrons' : 100000.0,
@@ -151,7 +151,7 @@ def mask_bit_description_dict():
     return d
 
 def mask_bit_description(bitname):
-    # bitname is the shorthand name for 
+    # bitname is the shorthand name for
 
     d = mask_bit_description_dict()
 
@@ -173,7 +173,7 @@ def reduced_flavor_to_bunit(flavor):
 
     assert(flavor in par['reduced_image_flavors'])
 
-    d = {'REDUCED' : 'ADU', 'INVVAR' : '1/ADU^2', 
+    d = {'REDUCED' : 'ADU', 'INVVAR' : '1/ADU^2',
          'BITMASK' : 'dimensionless', 'DETMAP' : 'sigma'}
 
     return d[flavor]
@@ -187,7 +187,7 @@ def expid_from_filename(fname):
     f = os.path.basename(fname)
 
     _string = f.split('-')[1]
-    
+
     expid = int(_string[0:8])
 
     return expid
@@ -204,10 +204,10 @@ def overscan_bdy_coords(amp):
     # pixel coordinates meant to be used to slice numpy arrays
     if amp  == 'E':
         return {'x_l': 1074, 'x_u': 1124, 'y_l': 0, 'y_u': 516}
-        
+
     elif amp == 'F':
         return {'x_l': 1124, 'x_u': 1174, 'y_l': 0, 'y_u': 516}
-    
+
     elif amp == 'G':
         return {'x_l': 1124, 'x_u': 1174, 'y_l': 516, 'y_u': 1032}
 
@@ -219,7 +219,7 @@ def prescan_bdy_coords(amp):
 
     if amp == 'E':
         return {'x_l': 0, 'x_u': 50, 'y_l': 0, 'y_u': 516}
-        
+
     elif amp == 'F':
         return {'x_l': 2198, 'x_u': 2248, 'y_l': 0, 'y_u': 516}
 
@@ -236,12 +236,39 @@ def amp_bdy_coords(amp):
 
     if amp == 'E':
         return {'x_l': 0, 'x_u': 1024, 'y_l': 0, 'y_u': 516}
-            
+
     elif amp == 'F':
         return {'x_l': 1024, 'x_u': 2048, 'y_l': 0, 'y_u': 516}
 
     elif amp == 'G':
         return {'x_l': 1024, 'x_u': 2048, 'y_l': 516, 'y_u': 1032}
-            
+
     elif amp == 'H':
         return {'x_l': 0, 'x_u': 1024, 'y_l': 516, 'y_u': 1032}
+
+
+def retrieve_git_rev(fname=None):
+    """Find a git revision string based on `fname`.
+
+    WARNING: This assumes `fname` is actually in a git clone, *not* an installed
+    tagged package.
+    """
+    if fname is None:
+        fname = __file__
+
+    code_dir = os.path.dirname(os.path.realpath(fname))
+    cwd = os.getcwd()
+    do_chdir = (cwd[0:len(code_dir)] != code_dir)
+    if do_chdir:
+        os.chdir(code_dir)
+    proc = sub.Popen(['git', 'rev-parse', '--short', 'HEAD'],
+                     stdout=sub.PIPE, stderr=sub.PIPE)
+    out, err = proc.communicate()
+    if proc.returncode == 0:
+        gitrev = out.decode('utf-8').strip()
+    else:
+        raise RuntimeError(err.decode('utf-8'))
+    if do_chdir:
+        os.chdir(cwd)
+
+    return gitrev

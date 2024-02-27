@@ -87,7 +87,7 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
     if fname_in is not None:
         assert(os.path.exists(fname_in))
 
-    gitrev = io.retrieve_git_rev()
+    gitrev = common.retrieve_git_rev()
 
     proc_obj = ProcObj(fname_in, gitrev)
 

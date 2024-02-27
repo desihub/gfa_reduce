@@ -275,22 +275,6 @@ def check_image_level_outputs_exist(outdir, fname_in, gzip=True,
         _ = reduced_image_fname(outdir, fname_in, flavor, gzip=gzip,
                                 cube_index=cube_index, outdir_not_needed=True)
 
-def retrieve_git_rev(fname=None):
-    log = get_logger()
-    if fname is None:
-        fname = __file__
-
-    code_dir = os.path.dirname(os.path.realpath(fname))
-    cwd = os.getcwd()
-    do_chdir = (cwd[0:len(code_dir)] != code_dir)
-    if do_chdir:
-        os.chdir(code_dir)
-    gitrev = os.popen("git rev-parse --short HEAD").read().replace('\n','')
-    if do_chdir:
-        os.chdir(cwd)
-    log.info('"git rev" version info: %s', gitrev)
-
-    return gitrev
 
 def write_image_level_outputs(exp, outdir, proc_obj, gzip=True,
                               cube_index=None, dont_write_invvar=False,
