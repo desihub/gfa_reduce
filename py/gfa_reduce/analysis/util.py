@@ -932,11 +932,11 @@ def get_obs_night_now(verbose=False):
 
 def _get_area_from_ap(ap):
     # this is to try and work around the photutils API change
-    # between versions 0.6 and 0.7
-    if photutils.__version__.find('0.7') != -1:
-        area = ap.area # 0.7
-    else:
+    # between versions 0.6 and 0.7+
+    if photutils.__version__.find('0.6') != -1:
         area = ap.area() # 0.6
+    else:
+        area = ap.area # 0.7 or above
 
     return area
 
