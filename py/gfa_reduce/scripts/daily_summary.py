@@ -18,6 +18,7 @@ from argparse import ArgumentParser
 
 import numpy as np
 
+from desiutil.iers import freeze_iers
 from desiutil.log import get_logger, DEBUG
 
 from .concat_ccds import _nights_list, _get_default_basedir, _append_many_nights
@@ -117,6 +118,7 @@ def main():
         log = get_logger(DEBUG)
     else:
         log = get_logger()
+    freeze_iers()
     gfa_recent_nights(workers=options.workers)
     gfa_daily_summary(workers=options.workers)
     return 0
