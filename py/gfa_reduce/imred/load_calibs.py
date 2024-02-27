@@ -2,6 +2,7 @@ import gfa_reduce.common as common
 import astropy.io.fits as fits
 import os
 import numpy as np
+from desiutil.log import get_logger
 
 def remove_overscan(image):
     sh = image.shape
@@ -13,14 +14,15 @@ def remove_overscan(image):
 
 
 def read_bias_image(extname):
+    log = get_logger()
     assert(common.is_valid_extname(extname))
 
     par = common.gfa_misc_params()
     bias_fname = os.path.join(os.environ[par['meta_env_var']], \
                               par['master_bias_filename'])
 
-    print('Attempting to read master bias : ' + bias_fname + 
-          ', extension name : ' + extname)
+    log.info('Attempting to read master bias : ' + bias_fname +
+             ', extension name : ' + extname)
 
     assert(os.path.exists(bias_fname))
 
@@ -30,6 +32,7 @@ def read_bias_image(extname):
     return bias
 
 def read_flat_image(extname):
+    log = get_logger()
     # at some point should add option to return master flat's
     # inverse variance as well
     assert(common.is_valid_extname(extname))
@@ -38,8 +41,8 @@ def read_flat_image(extname):
     flat_fname = os.path.join(os.environ[par['meta_env_var']], \
                               par['master_flat_filename'])
 
-    print('Attempting to read master flat : ' + flat_fname + 
-          ', extension name : ' + extname)
+    log.info('Attempting to read master flat : ' + flat_fname +
+             ', extension name : ' + extname)
 
     assert(os.path.exists(flat_fname))
 
@@ -49,14 +52,15 @@ def read_flat_image(extname):
     return flat
 
 def read_static_mask_image(extname):
+    log = get_logger()
     assert(common.is_valid_extname(extname))
 
     par = common.gfa_misc_params()
     mask_fname = os.path.join(os.environ[par['meta_env_var']], \
                               par['static_mask_filename'])
 
-    print('Attempting to read static bad pixel mask : ' + mask_fname + 
-          ', extension name : ' + extname)
+    log.info('Attempting to read static bad pixel mask : ' + mask_fname +
+             ', extension name : ' + extname)
 
     assert(os.path.exists(mask_fname))
 

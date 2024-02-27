@@ -13,16 +13,17 @@ import time
 from gfa_reduce.gfa_wcs import ccd_center_radec
 import json
 import astropy
+from desiutil.log import get_logger
 
-# in the context of this file, "image" and "exposure" generally refer to 
+
+#
+# in the context of this file, "image" and "exposure" generally refer to
 # GFA_image and GFA_exposure objects
-
-def loading_image_extension_message(extname):
-    print('Attempting to load image extension : ' + extname)
-
+#
 def load_image_from_hdu(hdu, verbose=True, cube_index=None, store_detmap=False,
                         exp_header=None, coadd_index_range=None):
-    loading_image_extension_message(hdu.header['EXTNAME'])
+    log = get_logger()
+    log.info('Attempting to load image extension : %s', hdu.header['EXTNAME'])
 
     header = hdu.header
 
@@ -31,7 +32,7 @@ def load_image_from_hdu(hdu, verbose=True, cube_index=None, store_detmap=False,
     # dimensions (trying to address edge case of EXPID = 83744 from 20210406
     if cube_index is None:
         if (header['NAXIS1'] != 2248) or (header['NAXIS2'] != 1032):
-            print('WRONGLY SHAPED RAW IMAGE: ', header['EXTNAME'])
+            log.warning('WRONGLY SHAPED RAW IMAGE: %s', header['EXTNAME'])
             return None
 
     # hack for PlateMaker acquisition image file format
@@ -66,9 +67,9 @@ def load_image_from_hdu(hdu, verbose=True, cube_index=None, store_detmap=False,
                      coadd_index_range=coadd_index_range)
 
 def load_image_from_filename(fname, extname):
+    log = get_logger()
     assert(os.path.exists(fname))
-
-    loading_image_extension_message(extname)
+    log.info('Attempting to load image extension : %s', extname)
     assert(common.is_valid_image_extname(extname))
 
     data, header = fits.getdata(fname, extname=extname, header=True)
@@ -81,14 +82,14 @@ def _atomic_write(data, outname):
         outname_tmp = outname.replace('.gz', '.tmp.gz')
     else:
         outname_tmp = outname + '.tmp'
-    
+
     if isinstance(data, Table):
         data.write(outname_tmp, format='fits')
     else:
         data.writeto(outname_tmp)
 
     os.rename(outname_tmp, outname)
-    
+
 def realtime_raw_read(fname, delay=2.0, max_attempts=5):
     """
     attempt to avoid getting burned by partially written files when
@@ -96,7 +97,7 @@ def realtime_raw_read(fname, delay=2.0, max_attempts=5):
 
     delay is in seconds
     """
-
+    log = get_logger()
     # something has gone badly wrong if the filename doesn't even exist
     # that's not the scenario I'm trying to address here
     assert(os.path.exists(fname))
@@ -110,7 +111,7 @@ def realtime_raw_read(fname, delay=2.0, max_attempts=5):
                 _, __ = hdu.data, hdu.header
                 ___ = hdu.data.shape
         except:
-            print('encountered problem reading ' + fname)
+            log.warning('encountered problem reading %s', fname)
             time.sleep(delay)
         if hdul is not None:
             break
@@ -132,7 +133,7 @@ def _has_extension_name(hdul, extname='PMGSTARS'):
 
 def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
                   store_detmap=False, max_cbox=31, hdul=None, mjdrange=None):
-
+    log = get_logger()
     # mjdrange should be 2 element list : [mjdmin, mjdmax]
 
     # exactly one of fname, hdul should be specified
@@ -143,7 +144,7 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
     if fname is not None:
         assert(os.path.exists(fname))
 
-        print('Attempting to load exposure : ' + fname)
+        log.info('Attempting to load exposure : %s', fname)
 
         if not realtime:
             hdul = fits.open(fname)
@@ -173,11 +174,11 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
     # hacks for PlateMaker acquisition image file format
     if exp_header is None:
         exp_header = hdul['PRIMARY'].header
-        
+
     if np.sum(is_image_hdu) == 0:
-        print('exposure may contain only focus cameras?')
+        log.warning('exposure may contain only focus cameras?')
         return None
-    
+
     w_im = np.where(is_image_hdu)[0]
 
     is_cube = (len(hdul[w_im[0]].data.shape) == 3)
@@ -201,7 +202,7 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
             pmgstars = Table(hdul['PMGSTARS'].data)
     else:
         coadd_ind_ranges = [None]*len(w_im)
-            
+
     try:
         imlist = []
         for i, ind in enumerate(w_im):
@@ -210,11 +211,11 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
                 imlist.append(_im)
 
         if len(imlist) == 0:
-            print('NO VALID RAW DATA??')
+            log.critical('NO VALID RAW DATA??')
             assert(False)
     except Exception as e:
-        print('failed to load exposure at image list creation stage')
-        print(e)
+        log.error('failed to load exposure at image list creation stage')
+        log.error(e)
         return None
 
     exp = GFA_exposure(imlist, exp_header=exp_header, bintables=bintables,
@@ -231,11 +232,11 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
     if cube_index != None:
         util._patch_guider_mjd_obs(exp)
 
-    print('Successfully loaded exposure : ' + fname)
-    print('Exposure has ' + str(exp.num_images_populated()) + 
-          ' image extensions populated')
-    print('Populated image extension names are : ' + 
-          str(exp.populated_extnames()))
+    log.info('Successfully loaded exposure : %s', fname)
+    log.info('Exposure has ' + str(exp.num_images_populated()) +
+             ' image extensions populated')
+    log.info('Populated image extension names are : ' +
+             str(exp.populated_extnames()))
 
     return exp
 
@@ -253,7 +254,7 @@ def reduced_image_fname(outdir, fname_in, flavor, gzip=True,
 
     assert(outname[-5:] == '.fits')
 
-    outname = outname.replace('.fits', 
+    outname = outname.replace('.fits',
         common.reduced_image_filename_label(flavor) + '.fits')
 
     if gzip:
@@ -276,7 +277,7 @@ def check_image_level_outputs_exist(outdir, fname_in, gzip=True,
                                 cube_index=cube_index, outdir_not_needed=True)
 
 def retrieve_git_rev(fname=None):
-
+    log = get_logger()
     if fname is None:
         fname = __file__
 
@@ -288,7 +289,7 @@ def retrieve_git_rev(fname=None):
     gitrev = os.popen("git rev-parse --short HEAD").read().replace('\n','')
     if do_chdir:
         os.chdir(cwd)
-    print('"git rev" version info:', gitrev)
+    log.info('"git rev" version info: %s', gitrev)
 
     return gitrev
 
@@ -298,7 +299,7 @@ def write_image_level_outputs(exp, outdir, proc_obj, gzip=True,
                               write_detmap=False, mjdrange=None):
     # exp is a GFA_exposure object
     # outdir is the output directory (string)
-
+    log = get_logger()
     par = common.gfa_misc_params()
 
     flavors_list = par['reduced_image_flavors']
@@ -322,13 +323,13 @@ def write_image_level_outputs(exp, outdir, proc_obj, gzip=True,
                 hdu.header['REQMJDLO'] = mjdrange[0]
                 hdu.header['REQMJDHI'] = mjdrange[1]
 
-        print('Attempting to write ' + flavor + ' image output to ' + 
-              outname)
+        log.info('Attempting to write ' + flavor + ' image output to ' +
+                 outname)
 
         _atomic_write(hdulist, outname)
-        
-        print('Successfully wrote ' + flavor + ' image output to ' + 
-              outname)
+
+        log.info('Successfully wrote ' + flavor + ' image output to ' +
+                 outname)
 
 def strip_none_columns(table):
     # can't write an astropy table to FITS if it has columns with None
@@ -360,20 +361,20 @@ def combine_per_camera_catalogs(catalogs):
     # handle case of no sources in any image
     if len(composite_list) == 0:
         return None
-    
+
     composite = vstack(composite_list)
     composite = strip_none_columns(composite)
 
     composite['extname'] = composite['camera']
     return composite
 
-def write_exposure_source_catalog(catalog, outdir, proc_obj, exp, 
+def write_exposure_source_catalog(catalog, outdir, proc_obj, exp,
                                   cube_index=None):
-
+    log = get_logger()
     # handle case of exposure with no retained sources
     if catalog is None:
         return
-    
+
     assert(os.path.exists(outdir))
 
     outname = os.path.join(outdir, os.path.basename(proc_obj.fname_in))
@@ -389,7 +390,7 @@ def write_exposure_source_catalog(catalog, outdir, proc_obj, exp,
     if cube_index is not None:
         outname = outname.replace('.fits',
                                   '-' + str(cube_index).zfill(5) + '.fits')
-    
+
     assert(not os.path.exists(outname))
 
     catalog['fname_in'] = proc_obj.fname_in
@@ -405,7 +406,7 @@ def write_exposure_source_catalog(catalog, outdir, proc_obj, exp,
     catalog['mjd'] = mjd
 
     catalog['valid_astrom_calibrator'] = catalog['valid_astrom_calibrator'].astype('uint8')
-    
+
     hdul = []
     hdul.append(fits.PrimaryHDU())
     hdul.append(fits.BinTableHDU(data=catalog, name='CATALOG'))
@@ -417,16 +418,17 @@ def write_exposure_source_catalog(catalog, outdir, proc_obj, exp,
 
     # dummy extension with copy of exposure-level raw data header
     hdul.append(fits.ImageHDU(data=None, header=exp.exp_header, name=exp.exp_header['EXTNAME']))
-    
+
     hdul = fits.HDUList(hdul)
-        
-    print('Attempting to write source catalog to ' + outname)
+
+    log.info('Attempting to write source catalog to %s', outname)
 
     _atomic_write(hdul, outname)
 
 # since this function doesn't do the writing of the PS1 cross-matches
 # it may belong somewhere else rather than in 'io'
 def get_ps1_matches(catalog, exp):
+    log = get_logger()
     # handle case of exposure with no retained sources
     if catalog is None:
         if exp.pmgstars is not None:
@@ -445,9 +447,9 @@ def get_ps1_matches(catalog, exp):
                                     return_external_cat=True)
 
     if ps1 is None:
-        print('No PS1 matches available -- Dec may be too low??')
+        log.warning('No PS1 matches available -- Dec may be too low??')
         return None
-    
+
     ps1.rename_column('ra', 'ra_ps1')
     ps1.rename_column('dec', 'dec_ps1')
 
@@ -470,13 +472,13 @@ def get_ps1_matches(catalog, exp):
     ps1_matches['use_for_zp'] = use_for_zp
 
     return ps1_matches
-    
-def write_ps1_matches(ps1_matches, outdir, fname_in, cube_index=None):
 
+def write_ps1_matches(ps1_matches, outdir, fname_in, cube_index=None):
+    log = get_logger()
     if ps1_matches is None:
-        print('no PS1 cross-matches to write...')
+        log.warning('no PS1 cross-matches to write...')
         return
-    
+
     assert(os.path.exists(outdir))
 
     outname = os.path.join(outdir, os.path.basename(fname_in))
@@ -492,7 +494,7 @@ def write_ps1_matches(ps1_matches, outdir, fname_in, cube_index=None):
     if cube_index is not None:
         outname = outname.replace('.fits',
                                   '-' + str(cube_index).zfill(5) + '.fits')
-    
+
     assert(not os.path.exists(outname))
 
     # change use_for_zp column to be 0/1 rather than
@@ -502,13 +504,13 @@ def write_ps1_matches(ps1_matches, outdir, fname_in, cube_index=None):
         ps1_matches['use_for_zp'] = ps1_matches['use_for_zp'].astype('int16')
 
     _atomic_write(ps1_matches, outname)
-    
+
 def gather_gaia_crossmatches(catalog, mjd=None, gfa_targets=None):
 
     # handle case of exposure with no retained sources
     if catalog is None:
         return None
-    
+
     gaia_matches = gaia.gaia_xmatch(catalog['ra'], catalog['dec'], mjd=mjd,
                                     gfa_targets=gfa_targets)
 
@@ -521,7 +523,7 @@ def gather_gaia_crossmatches(catalog, mjd=None, gfa_targets=None):
         gaia_matches['mjd_for_gaia'] = mjd
 
     catalog['gaia_motion_corr'] = int(mjd is not None)
-        
+
     return gaia_matches
 
 def append_gaia_crossmatches(catalog, mjd=None, gfa_targets=None):
@@ -531,25 +533,25 @@ def append_gaia_crossmatches(catalog, mjd=None, gfa_targets=None):
     # handle case of exposure with no retained sources
     if gaia_matches is None:
         return None
-    
+
     # I believe that there will always be a Gaia match for each
     # detected source, but will need to see if that assumption breaks
     # at any point
 
     catalog = hstack([catalog, gaia_matches])
-    
+
     return catalog
 
 def gather_pixel_stats(exp, skip=False):
-
+    log = get_logger()
     if not skip:
-        print('Attempting to compute basic statistics of raw pixel data')
+        log.info('Attempting to compute basic statistics of raw pixel data')
         t = None
         for extname, im in exp.images.items():
             if im is None:
                 continue
 
-            print('Computing pixel statistics for ' + extname)
+            log.info('Computing pixel statistics for ' + extname)
             t_im = bis.compute_all_stats(im.image, extname=extname)
             if t is None:
                 t = t_im
@@ -558,12 +560,12 @@ def gather_pixel_stats(exp, skip=False):
     else:
         t = Table()
         t['camera'] = list(exp.images.keys())
-            
-                
+
+
     return t
-    
+
 def high_level_ccds_metrics(tab, catalog, exp):
-    
+
     nrows = len(tab)
 
     fwhm_major_pix = np.zeros(nrows)
@@ -616,7 +618,7 @@ def prescan_overscan_ccds_table(tab, exp):
     npix_bad_per_amp = np.zeros((len(tab), len(ampnames)), dtype=int)
     overscan_medians = np.zeros((len(tab), len(ampnames)), dtype='float32')
     prescan_medians = np.zeros((len(tab), len(ampnames)), dtype='float32')
-    
+
     for i, t in enumerate(tab):
         npix_bad_per_amp[i, :] = np.array([exp.images[t['extname']].overscan.n_badpix[amp] for amp in ampnames])
         overscan_medians[i, :] = np.array([exp.images[t['extname']].overscan.overscan_medians[amp] for amp in ampnames])
@@ -643,10 +645,10 @@ def astrom_ccds_table(tab, exp):
     longpoles = np.zeros(nrows, dtype=float) + 180 # double
     latpoles = np.zeros(nrows, dtype=float) + 90 # double
     pv2s = np.zeros((nrows, 2), dtype=float) # double
-    
-    
+
+
     tab['NAXIS'] = naxis
-    
+
     for i, extname in enumerate(tab['extname']):
         crvals[i, :] = exp.images[extname].wcs.wcs.crval
         cds[i, :, :] = np.transpose(exp.images[extname].wcs.wcs.cd)
@@ -698,7 +700,7 @@ def dark_current_ccds_table(tab, exp):
     apply_rescale_factor = np.zeros(nrows, dtype='uint8')
     dark_rescale_ncalls = np.zeros((nrows, 4), dtype=int) # this is per-amp
     dark_rescale_converged = np.zeros((nrows, 4), dtype='uint8')
-    
+
     for i, t in enumerate(tab):
         dc = exp.dark_current_objs[t['extname']]
         fname_master_dark.append(dc.fname_master_dark)
@@ -713,7 +715,7 @@ def dark_current_ccds_table(tab, exp):
         dark_rescale_factor_adopted[i] = dc.dark_rescale_factor_adopted
         dark_rescale_ncalls[i, :] = dc.dark_rescale_ncalls
         dark_rescale_converged[i, :] = dc.dark_rescale_converged
-        
+
     tab['fname_master_dark'] = fname_master_dark
     tab['do_fit_dark_scaling'] = do_fit_dark_scaling
     tab['master_dark_exptime'] = origtime
@@ -726,7 +728,7 @@ def dark_current_ccds_table(tab, exp):
     tab['apply_dark_rescale_factor'] = apply_rescale_factor
     tab['dark_rescale_ncalls'] = dark_rescale_ncalls
     tab['dark_rescale_converged'] = dark_rescale_converged
-    
+
 def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
                         ps1=None, det_sn_thresh=5.0, sky_mags=True,
                         minimal=False, mjdrange=None):
@@ -754,7 +756,7 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
                 sky_mag_ab_per_amp[i, j] = _mag
 
         tab['sky_mag_ab_per_amp'] = sky_mag_ab_per_amp
-    
+
     tab['petal_loc'] = np.array([common.gfa_extname_to_gfa_number(extname) for extname in tab['camera']], dtype='uint8')
 
     tab['expid'] = [exp.images[extname].header['EXPID'] for extname in tab['camera']]
@@ -772,11 +774,11 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     tab['skyra'] = [exp.images[extname].try_retrieve_meta_keyword('SKYRA', placeholder=np.nan) for extname in tab['camera']]
 
     tab['skydec'] = [exp.images[extname].try_retrieve_meta_keyword('SKYDEC', placeholder=np.nan) for extname in tab['camera']]
-    
+
     # zenith distance using approximate center of the field given by SKYRA, SKYDEC
 
     tab['zenith_dist_deg'] = [util._zenith_distance(t['skyra'], t['skydec'], t['lst_deg']) for t in tab]
-    
+
     tab['domshutl'] = np.array(nrows*[exp.try_retrieve_header_card('DOMSHUTL', placeholder='')], dtype='U8')
     tab['domshutu'] = np.array(nrows*[exp.try_retrieve_header_card('DOMSHUTU', placeholder='')], dtype='U8')
     tab['pmcover'] = exp.try_retrieve_header_card('PMCOVER', placeholder='')
@@ -793,7 +795,7 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     tab['moon_zd_deg'] = util._zenith_distance(tab['moonra'][0],
                                                tab['moondec'][0],
                                                tab['lst_deg'][0])
-    
+
     tab['t_c_for_dark'] = [exp.images[extname].t_c_for_dark for extname in tab['camera']]
     tab['t_c_for_dark_is_guess'] = [int(exp.images[extname].t_c_for_dark_is_guess) for extname in tab['camera']]
     tab['time_s_for_dark'] = [exp.images[extname].time_s_for_dark for extname in tab['camera']]
@@ -820,7 +822,7 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
         tab['coadd_index_end'] = [exp.images[extname].coadd_index_range[1] for extname in tab['camera']]
         tab['coadd_mjdobs_min'] = [exp.bintables[extname]['MJD-OBS'][ind] for extname, ind in zip(tab['camera'], tab['coadd_index_start'])]
         tab['coadd_mjdobs_max'] =  [exp.bintables[extname]['MJD-OBS'][ind] for extname, ind in zip(tab['camera'], tab['coadd_index_end'])]
-    
+
     tab['racen'] = np.zeros(len(tab), dtype=float)
     tab['deccen'] = np.zeros(len(tab), dtype=float)
 
@@ -834,7 +836,7 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     tab['fiber_fracflux_bgs'] = [(exp.images[extname].psf.fiber_fracflux_bgs if exp.images[extname].psf is not None else np.nan) for extname in tab['camera']]
 
     tab['n_sources_for_psf'] = [(exp.images[extname].psf.nstars if exp.images[extname].psf is not None else 0) for extname in tab['camera']]
-    
+
     # this pertains to aperture _3 which is 1.5 asec radius
     tab['aper_corr_fac'] = [(exp.images[extname].psf.aper_corr_fac if exp.images[extname].psf is not None else np.nan) for extname in tab['camera']]
 
@@ -875,7 +877,7 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     tab['ha_deg'] = [util._get_ha(t['skyra'], t['lst_deg'], t['mountdec_header']) for t in tab]
 
     tab['ha_deg_per_gfa'] = [util._get_ha(t['racen'], t['lst_deg'], t['mountdec_header']) for t in tab]
-    
+
     tab['moon_sep_deg'] = util.moon_separation(tab['moonra'], tab['moondec'],
                                                tab['racen'], tab['deccen'])
 
@@ -892,7 +894,7 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     # this per-camera version of airmass should also evolve
     # properly with time for guide cube outputs
     tab['airmass_per_gfa'] = 1.0/np.cos(tab['zd_deg_per_gfa']/(180.0/np.pi))
-    
+
     tab['zp_adu_per_s'] = [exp.images[extname].compute_zeropoint(ps1) for extname in tab['camera']]
 
     tab['n_stars_for_zp'] = [(np.sum(ps1['use_for_zp'] & (ps1['extname'] == extname)).astype(int) if 'use_for_zp' in ps1.colnames else 0) for extname in tab['camera']]
@@ -906,7 +908,7 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     tab['fracflux_nominal_bgs'] = np.float32(par['fracflux_nominal_bgs'])
 
     tab['det_sn_thresh'] = det_sn_thresh
-    
+
     prescan_overscan_ccds_table(tab, exp)
     high_level_ccds_metrics(tab, catalog, exp)
     astrom_ccds_table(tab, exp)
@@ -919,7 +921,7 @@ def assemble_ccds_table(tab, catalog, exp, outdir, proc_obj, cube_index=None,
     return tab
 
 def write_ccds_table(tab, outdir, proc_obj, cube_index=None):
-
+    log = get_logger()
     assert(os.path.exists(outdir))
 
     outname = os.path.join(outdir, os.path.basename(proc_obj.fname_in))
@@ -937,13 +939,13 @@ def write_ccds_table(tab, outdir, proc_obj, cube_index=None):
                                   '-' + str(cube_index).zfill(5) + '.fits')
 
     assert(not os.path.exists(outname))
-    
-    print('Attempting to write CCDs table to ' + outname)
+
+    log.info('Attempting to write CCDs table to %s', outname)
 
     _atomic_write(tab, outname)
 
 def write_pmgstars(exp, outdir, fname_in, cube_index):
-
+    log = get_logger()
     assert(cube_index is not None)
 
     if exp.pmgstars is None:
@@ -963,14 +965,14 @@ def write_pmgstars(exp, outdir, fname_in, cube_index):
 
     outname = outname.replace('.fits',
                               '-' + str(cube_index).zfill(5) + '.fits')
-    
+
     assert(not os.path.exists(outname))
 
     pmgstars = exp.pmgstars
 
-    print('Attempting to write PMGSTARS table to ' + outname)
+    log.info('Attempting to write PMGSTARS table to %s', outname)
     _atomic_write(pmgstars, outname)
-    
+
 def write_psfs(exp, outdir, fname_in, cube_index=None, cubes=False):
 
     assert(os.path.exists(outdir))
@@ -990,7 +992,7 @@ def write_psfs(exp, outdir, fname_in, cube_index=None, cubes=False):
     if cube_index is not None:
         outname = outname.replace('.fits',
                                   '-' + str(cube_index).zfill(5) + '.fits')
-    
+
     assert(not os.path.exists(outname))
 
     hdul = []
@@ -1037,9 +1039,9 @@ def write_full_detlists(exp, outdir, fname_in, cube_index=None):
 
 def write_dm_fieldmodel(fm, outdir, fname_in, cube_index=None):
     # fm should be a desimeter fieldmodel object
-
+    log = get_logger()
     if fm is None:
-        print('No desimeter field model JSON file will be written')
+        log.info('No desimeter field model JSON file will be written')
         return
 
     assert(os.path.exists(outdir))

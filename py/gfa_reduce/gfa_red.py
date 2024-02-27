@@ -10,6 +10,8 @@ import gfa_reduce.analysis.recalib_astrom as wcs
 import gfa_reduce.analysis.dm as dm
 import time
 
+from desiutil.log import get_logger
+
 #
 # This is now done in gfa_reduce.scripts.daily_summary.main().
 #
@@ -66,16 +68,16 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
           search_rad_arcmin=6.0, do_sky_mag=True, gfa_targets=None,
           exp_data=None, minimal_ccds_metadata=False,
           skip_2d_gaussians=False, mjdmin=None, mjdmax=None, pmgstars=False):
-
-    print('Starting GFA reduction pipeline at: ' + str(datetime.utcnow()) +
-          ' UTC')
+    log = get_logger()
+    log.info('Starting GFA reduction pipeline at: ' + str(datetime.utcnow()) +
+             ' UTC')
 
     t0 = time.time()
 
     try:
-        print('Running on host: ' + str(os.environ.get('HOSTNAME')))
+        log.info('Running on host: ' + str(os.environ.get('HOSTNAME')))
     except:
-        print('Could not retrieve hostname!')
+        log.error('Could not retrieve hostname!')
 
     write_outputs = (outdir is not None)
 
@@ -107,7 +109,7 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
     # check for simulated data
     if (exp is None) or util.has_wrong_dimensions(exp):
         # point is to not crash, for sake of real time reductions
-        print('EXITING: exposure may be a simulation or contain only focus camera images?!')
+        log.critical('Exposure may be a simulation or contain only focus camera images?!')
         return
 
     if exp_data is not None:
@@ -150,7 +152,7 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
 
         if not skip_astrometry:
             # run astrometric recalibration
-            print('Attempting astrometric recalibration relative to Gaia DR2')
+            log.info('Attempting astrometric recalibration relative to Gaia DR2')
 
             if gfa_targets is not None:
                 util.pm_pi_corr_fiberassign(gfa_targets, exp_mjd)
@@ -168,13 +170,13 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
 
         if (not no_ps1_xmatch) and (par['ps1_env_var'] in os.environ):
             # probably should look into dec < -30 handling more at some point
-            print('Attempting to perform PS1 cross-matching...')
+            log.info('Attempting to perform PS1 cross-matching...')
             ps1 = io.get_ps1_matches(catalog, exp)
         else:
             ps1 = None
 
         if (not no_gaia_xmatch) and (par['gaia_env_var'] in os.environ):
-            print('Attempting to identify Gaia cross-matches')
+            log.info('Attempting to identify Gaia cross-matches')
             catalog = io.append_gaia_crossmatches(catalog,
                                                   mjd=(None if no_pm_pi_corr else exp_mjd), gfa_targets=gfa_targets)
     else:
@@ -200,8 +202,8 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
             os.mkdir(outdir)
 
         if not skip_image_outputs:
-            print('Attempting to write image-level outputs to directory : ' +
-                  outdir)
+            log.info('Attempting to write image-level outputs to directory : ' +
+                     outdir)
             # could add command line arg for turning off gzip compression
             io.write_image_level_outputs(exp, outdir, proc_obj, gzip=True,
                                          cube_index=cube_index,
@@ -240,12 +242,12 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
         if not return_fieldmodel:
             io.write_dm_fieldmodel(fm, outdir, fname_in, cube_index=cube_index)
 
-    print('Successfully finished reducing ' + fname_in)
+    log.info('Successfully finished reducing ' + fname_in)
 
     dt = time.time() - t0
-    print('GFA reduction pipeline took ' + '{:.2f}'.format(dt) + ' seconds')
-    print('GFA reduction pipeline completed at: ' + str(datetime.utcnow()) +
-          ' UTC')
+    log.info('GFA reduction pipeline took ' + '{:.2f}'.format(dt) + ' seconds')
+    log.info('GFA reduction pipeline completed at: ' + str(datetime.utcnow()) +
+             ' UTC')
 
     # for field acquisition mode
     if return_fieldmodel:

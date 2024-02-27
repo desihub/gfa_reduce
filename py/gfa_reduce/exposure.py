@@ -7,20 +7,23 @@ import gfa_reduce.analysis.util as util
 import gfa_reduce.analysis.phot as phot
 from multiprocessing import Pool
 
+from desiutil.log import get_logger
+
+
 class GFA_exposure:
     """Object encapsulating the contents of a single GFA exposure"""
 
     def __init__(self, image_list, exp_header=None, bintables=None,
                  max_cbox=31, pmgstars=None):
         # images is a dictionary of GFA_image objects
-
+        self.log = get_logger()
         par = common.gfa_misc_params()
         _extnames = [_im.header['EXTNAME'] for _im in image_list]
         _extnames.sort()
-        self.images = dict(zip(_extnames, 
+        self.images = dict(zip(_extnames,
                                par['n_cameras']*[None]))
 
-        self.dark_current_objs = dict(zip(common.valid_image_extname_list(), 
+        self.dark_current_objs = dict(zip(common.valid_image_extname_list(),
                                           par['n_cameras']*[None]))
 
         self.assign_image_list(image_list)
@@ -31,10 +34,10 @@ class GFA_exposure:
         # hack for 20210106
         if self.exp_header is not None:
             if self.exp_header['SKYRA'] is None:
-                print('REPLACING GUIDER SKYRA WITH REQRA')
+                self.log.info('REPLACING GUIDER SKYRA WITH REQRA')
                 self.exp_header['SKYRA'] = self.exp_header['REQRA']
             if self.exp_header['SKYDEC'] is None:
-                print('REPLACING GUIDER SKYDEC WITH REQDEC')
+                self.log.info('REPLACING GUIDER SKYDEC WITH REQDEC')
                 self.exp_header['SKYDEC'] = self.exp_header['REQDEC']
 
         self.pixels_calibrated = None
@@ -61,7 +64,7 @@ class GFA_exposure:
                 image.max_cbox = self.max_cbox
 
     def subtract_bias(self):
-        print('Attempting to subtract bias...')
+        self.log.info('Attempting to subtract bias...')
         for extname in self.images.keys():
             if self.images[extname] is not None:
                 self.images[extname].image = self.images[extname].image - \
@@ -73,42 +76,42 @@ class GFA_exposure:
                     self.images[extname].image[bdy['y_l']:bdy['y_u'],
                                                bdy['x_l']:bdy['x_u']] -= \
                         self.images[extname].overscan.overscan_medians[amp]
-                
+
                 self.images[extname].bias_subtracted = True
                 self.images[extname].calc_variance_e_squared()
 
     def subtract_dark_current(self, do_dark_rescaling=True, mp=False):
-        print('Attempting to subtract dark current...')
+        self.log.info('Attempting to subtract dark current...')
 
         if mp:
             args = []
 
         for extname in self.images.keys():
             if self.images[extname] is not None:
-                
+
                 acttime = self.images[extname].try_retrieve_meta_keyword('EXPTIME')
                 if (acttime is None) or (acttime == 0):
-                    print('trying REQTIME instead of EXPTIME')
+                    self.log.info('trying REQTIME instead of EXPTIME')
                     acttime = self.images[extname].try_retrieve_meta_keyword('REQTIME')
                 if (acttime is None) or (acttime == 0):
-                    print('could not find an exposure time !!!!')
+                    self.log.critical('could not find an exposure time !!!!')
                     assert(False) # die
 
                 self.images[extname].time_s_for_dark = acttime
-                
+
                 self.images[extname].t_c_for_dark_is_guess = False
                 t_c = self.images[extname].try_retrieve_meta_keyword('GCCDTEMP')
                 if t_c is None:
-                    print('trying GCOLDTEC instead of GCCDTEMP')
+                    self.log.info('trying GCOLDTEC instead of GCCDTEMP')
                     t_c = self.images[extname].try_retrieve_meta_keyword('GCOLDTEC')
-                    
+
                 if t_c is None:
-                    print('could not find a CCD temperature !!!!')
+                    self.log.warning('could not find a CCD temperature !!!!')
                     self.images[extname].t_c_for_dark_is_guess = True
                     t_c = 11.0 # HACK !!!!
 
                 self.images[extname].t_c_for_dark = t_c
-                
+
 
                 if not mp:
                     dark_image, dc_obj = dark_current.total_dark_image_adu(extname,
@@ -122,7 +125,7 @@ class GFA_exposure:
                     args.append((extname, acttime, t_c, self.images[extname].image, do_dark_rescaling))
 
         if mp:
-            print('Computing dark scalings for all guide cameras in parallel...')
+            self.log.info('Computing dark scalings for all guide cameras in parallel...')
             nproc = len(args)
             assert(nproc <= 6)
             p = Pool(nproc)
@@ -134,9 +137,9 @@ class GFA_exposure:
                 self.dark_current_objs[extname] = result[1]
 
             del args, results
-                
+
     def apply_flatfield(self):
-        print('Attempting to apply flat field...')
+        self.log.info('Attempting to apply flat field...')
         for extname in self.images.keys():
             if self.images[extname] is not None:
                 flatfield = load_calibs.read_flat_image(extname)
@@ -152,7 +155,7 @@ class GFA_exposure:
         if do_apply_flatfield:
             self.apply_flatfield()
         else:
-            print('Skipping flatfielding')
+            self.log.info('Skipping flatfielding')
             for extname in self.images.keys():
                 self.images[extname].calc_variance_adu()
         self.pixels_calibrated = True
@@ -168,7 +171,7 @@ class GFA_exposure:
         hdulist = []
         for extname in extname_list:
             if self.images[extname] is not None:
-                hdu = self.images[extname].to_hdu(primary=(len(hdulist) == 0), 
+                hdu = self.images[extname].to_hdu(primary=(len(hdulist) == 0),
                                                   flavor=flavor)
                 hdulist.append(hdu)
 
@@ -184,9 +187,9 @@ class GFA_exposure:
         for im in self.images.values():
             if im is not None:
                 im.set_empirical_bg_sigma(careful_sky=careful_sky)
-                print('empirical ' + im.header['EXTNAME'] + 
-                      ' background sigma = ' + 
-                      '{:.2f}'.format(im.empirical_bg_sigma) + ' ADU')
+                self.log.info('empirical ' + im.header['EXTNAME'] +
+                              ' background sigma = ' +
+                              '{:.2f}'.format(im.empirical_bg_sigma) + ' ADU')
 
     def all_source_catalogs(self, mp=False, run_aper_phot=True,
                             det_sn_thresh=5, skip_2dg=False):
@@ -219,7 +222,7 @@ class GFA_exposure:
                 if im is not None:
                     args.append((im.image, im.bitmask, im.extname, im.ivar_adu, im.max_cbox, run_aper_phot, det_sn_thresh, skip_2dg))
 
-            print('Running source cataloging for all guide cameras in parallel...')
+            self.log.info('Running source cataloging for all guide cameras in parallel...')
             nproc = len(args)
             assert(nproc <= 6)
             p = Pool(nproc)
@@ -228,7 +231,7 @@ class GFA_exposure:
             for i, result in enumerate(results):
                 extname = args[i][2] # hopefully this indexing doesn't change...
                 tables[extname] = self.images[extname].ingest_cataloging_results(*result)
-            
+
         # do I also want to store the tables as an attribute belonging to
         # this exposure object?
         return tables
@@ -239,7 +242,7 @@ class GFA_exposure:
         # exposure
         if astr is None:
             return
-        
+
         for a in astr:
             extname = a['extname']
             self.images[extname].update_wcs(a)
@@ -250,7 +253,7 @@ class GFA_exposure:
         # exposure
         if cat is None:
             return
-        
+
         extnames = np.unique(cat['camera'])
 
         for extname in extnames:
@@ -260,7 +263,7 @@ class GFA_exposure:
         for image in self.images.values():
             if image is None:
                 continue
-            
+
             extname = image.header['EXTNAME'].strip()
             if image.cube_index is None:
                 image.bintable_row = None
@@ -285,20 +288,20 @@ class GFA_exposure:
 
                 if has_exptime_column:
                     if self.images[extname].bintable_row['EXPTIME'] == 0:
-                        print('DISCARDING ' + extname + ' BECAUSE IT HAS ZERO EXPOSURE TIME')
+                        self.log.warning('DISCARDING ' + extname + ' BECAUSE IT HAS ZERO EXPOSURE TIME')
                         del self.images[extname]
                         if self.pmgstars is not None:
                             self.pmgstars = self.pmgstars[np.where(self.pmgstars['GFA_LOC'] != extname)[0]]
 
         if len(self.images) == 0:
-            print('ALL CAMERAS HAVE ZERO EXPOSURE TIME??')
+            self.log.critical('ALL CAMERAS HAVE ZERO EXPOSURE TIME??')
             assert(False)
 
     def try_retrieve_header_card(self, keyword, placeholder=None):
         if (keyword in self.exp_header.keys()) and (self.exp_header[keyword] is not None):
             return self.exp_header[keyword]
         else:
-            print('could not find ' + keyword + ' in exposure-level header !!')
+            self.log.error('could not find ' + keyword + ' in exposure-level header !!')
             return placeholder
 
     def compute_psfs(self, catalog):
@@ -400,7 +403,7 @@ class GFA_exposure:
 
         self._trim_pmgstars()
         self.pmgstars_dq_flags()
-        
+
         good = (self.pmgstars['median_1_'] > 0) & (self.pmgstars['ang_sep_deg'] < 2.0/3600.0) & (self.pmgstars['min_edge_dist_pix'] >= 10) & (self.pmgstars['dq_flags'] == 0)
 
         self.pmgstars['good'] = good.astype(int)
