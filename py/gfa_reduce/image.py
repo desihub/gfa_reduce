@@ -2,7 +2,7 @@ import gfa_reduce.common as common
 import gfa_reduce.imred.dq_mask as dq_mask
 import gfa_reduce.analysis.sky as sky
 import gfa_reduce.analysis.segment as segment
-import gfa_reduce.analysis.phot as phot # may not be needed anymore?
+# import gfa_reduce.analysis.phot as phot # may not be needed anymore?
 from gfa_reduce.gfa_wcs import nominal_tan_wcs
 import numpy as np
 import astropy.io.fits as fits

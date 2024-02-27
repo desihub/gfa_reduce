@@ -12,7 +12,6 @@ import numpy as np
 import time
 from gfa_reduce.gfa_wcs import ccd_center_radec
 import json
-import astropy
 from desiutil.log import get_logger
 
 

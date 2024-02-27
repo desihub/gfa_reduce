@@ -1,0 +1,137 @@
+#
+# internal modules needed by desi_gfa_reduce_daily_summary
+#
+daily_summary imports:
+    - concat_ccds imports:
+        - None
+    - gfa_single_night imports:
+        - gfa_reduce (to get __file__) imports:
+            - None
+        - gfa_reduce.common imports:
+            - None
+        - gfa_reduce.gfa_red imports:
+            - gfa_reduce.io imports:
+                - gfa_reduce.image imports:
+                    - gfa_reduce.common imports:
+                        - None
+                    - gfa_reduce.imred.dq_mask imports:
+                        - gfa_reduce.common imports:
+                            - None
+                        - gfa_reduce.imred.load_calibs imports:
+                            - gfa_reduce.common imports:
+                                - None
+                    - gfa_reduce.gfa_wcs imports:
+                        - gfa_reduce.common imports:
+                            - None
+                    - gfa_reduce.analysis.util imports:
+                        - gfa_reduce.common imports:
+                            - None
+                        - gfa_reduce.xmatch.gaia imports:
+                            - gfa_reduce.common imports:
+                                - None
+                    - gfa_reduce.analysis.sky imports:
+                        - gfa_reduce.common imports:
+                            - None
+                        - gfa_reduce.analysis.util imports:
+                            - gfa_reduce.common imports:
+                                - None
+                            - gfa_reduce.xmatch.gaia imports:
+                                - gfa_reduce.common imports:
+                                    - None
+                    - gfa_reduce.analysis.segment imports:
+                        - gfa_reduce.common imports:
+                            - None
+                        - gfa_reduce.analysis.util imports:
+                            - gfa_reduce.common imports:
+                                - None
+                            - gfa_reduce.xmatch.gaia imports:
+                                - gfa_reduce.common imports:
+                                    - None
+                    - gfa_reduce.analysis.djs_photcen imports:
+                        - None
+                    - gfa_reduce.analysis.radprof imports:
+                        - None
+                    - gfa_reduce.analysis.splinefwhm imports:
+                        - None
+                - gfa_reduce.exposure imports:
+                    - gfa_reduce.common imports:
+                        - None
+                    - gfa_reduce.imred.load_calibs imports:
+                        - gfa_reduce.common imports:
+                            - None
+                    - gfa_reduce.dark_current imports:
+                        - gfa_reduce.common imports:
+                            - None
+                    - gfa_reduce.analysis.util imports:
+                        - gfa_reduce.common imports:
+                            - None
+                        - gfa_reduce.xmatch.gaia imports:
+                            - gfa_reduce.common imports:
+                                - None
+                    - gfa_reduce.analysis.phot imports:
+                        - gfa_reduce.analysis.util imports:
+                            - gfa_reduce.common imports:
+                                - None
+                            - gfa_reduce.xmatch.gaia imports:
+                                - gfa_reduce.common imports:
+                                    - None
+                        - gfa_reduce.analysis.gaussian imports:
+                            - None
+                        - gfa_reduce.analysis.djs_maskinterp imports:
+                            - None
+                        - gfa_reduce.analysis.djs_photcen imports:
+                            - None
+                        - gfa.reduce.common imports:
+                            - None
+                - gfa_reduce.common imports:
+                    - None
+                - gfa_reduce.xmatch.gaia imports:
+                    - gfa_reduce.common imports:
+                        - None
+                - gfa_reduce.analysis.basic_image_stats imports:
+                    - gfa_reduce.analysis.util imports:
+                        - gfa_reduce.common imports:
+                            - None
+                        - gfa_reduce.xmatch.gaia imports:
+                            - gfa_reduce.common imports:
+                                - None
+                - gfa_reduce.analysis.basic_catalog_stats imports:
+                    - gfa_reduce.analysis.util imports:
+                        - gfa_reduce.common imports:
+                            - None
+                        - gfa_reduce.xmatch.gaia imports:
+                            - gfa_reduce.common imports:
+                                - None
+                - gfa_reduce.analysis.util imports:
+                    - gfa_reduce.common imports:
+                        - None
+                    - gfa_reduce.xmatch.gaia imports:
+                        - gfa_reduce.common imports:
+                            - None
+                - gfa_reduce.gfa_wcs imports:
+                    - gfa_reduce.common imports:
+                        - None
+            - gfa_reduce.analysis.util imports:
+                - gfa_reduce.common imports:
+                    - None
+                - gfa_reduce.xmatch.gaia imports:
+                    - gfa_reduce.common imports:
+                        - None
+            - gfa_reduce.analysis.recalib_astrom imports:
+                - gfa_reduce.analysis.asterisms imports:
+                    - gfa_reduce.analysis.amm_2dhist imports:
+                        - None
+                    - gfa_reduce.analysis.center_contrast imports:
+                        - None
+                    - gfa_reduce.common imports:
+                        - None
+                    - gfa_reduce.gfa_wcs imports:
+                        - gfa_reduce.common imports:
+                            - None
+                    - gfa_reduce.xmatch.gaia imports:
+                        - gfa_reduce.common imports:
+                            - None
+            - gfa_reduce.analysis.dm imports:
+                - gfa_reduce.io POTENTIALLY CIRCULAR IMPORT
+            - gfa_reduce.common imports:
+                - None
