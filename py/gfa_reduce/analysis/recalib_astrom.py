@@ -4,6 +4,7 @@ import astropy.io.fits as fits
 from multiprocessing import Pool
 import time
 from astropy.table import Table
+from desiutil.log import get_logger
 
 # run astrometric calibration given a catalog with the centroids and
 # an initial guess (SKYRA, SKYDEC) of the field of view center
@@ -12,10 +13,10 @@ from astropy.table import Table
 def recalib_astrom(cat, fname_raw, mjd=None, h=None, mp=False,
                    arcmin_max=6.0, gfa_targets=None):
     # cat should be the catalog for an entire exposure
-
+    log = get_logger()
     if cat is None:
         return None
-        
+
     extnames = np.unique(cat['camera'])
 
     if h is None:
@@ -33,7 +34,7 @@ def recalib_astrom(cat, fname_raw, mjd=None, h=None, mp=False,
         gaia['ra'] = gfa_targets['TARGET_RA']
         gaia['dec'] = gfa_targets['TARGET_DEC']
 
-    print('astrometry search using ' + '{:.1f}'.format(arcmin_max) + ' arcminute radius')
+    log.info('astrometry search using %.1f arcminute radius', arcmin_max)
     args = []
     for extname in extnames:
         _cat = cat[(cat['camera'] == extname) & cat['valid_astrom_calibrator']]
@@ -47,7 +48,7 @@ def recalib_astrom(cat, fname_raw, mjd=None, h=None, mp=False,
         for tup in args:
             result.append(pattern_match(*tup))
     else:
-        print('Running astrometric pattern matching for all guide cameras in parallel...')
+        log.info('Running astrometric pattern matching for all guide cameras in parallel...')
         nproc = len(args)
         assert(nproc <= 6)
         p = Pool(nproc)
@@ -61,10 +62,10 @@ def recalib_astrom(cat, fname_raw, mjd=None, h=None, mp=False,
 
     dt = time.time()-t0
 
-    print('time taken to astrometrically recalibrate all cameras:  ', dt, ' seconds')
+    log.info('time taken to astrometrically recalibrate all cameras: %s seconds', dt)
 
     for r in result:
         if r is not None:
-            print(r['extname'], 'CONTRAST = ', r['contrast'])
+            log.info('%s CONTRAST = %s', r['extname'], r['contrast'])
 
     return result

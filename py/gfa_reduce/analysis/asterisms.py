@@ -13,6 +13,8 @@ from .center_contrast import center_contrast
 import gfa_reduce.common as common
 import copy
 from gfa_reduce.gfa_wcs import nominal_tan_wcs
+from desiutil.log import get_logger
+
 
 def downselected_star_sample(cat, n_desi_max):
     assert(len(np.unique(cat['camera'])) == 1)
@@ -30,14 +32,15 @@ def downselected_star_sample(cat, n_desi_max):
         brightness = _cat['DETMAP_PEAK']
     else:
         brightness = _cat['detmap_peak']
-    
+
     sind = np.argsort(-1.0*brightness)
-    
+
     n = len(sind)
 
     result = _cat[sind[0:(min(n_desi_max, n))]]
 
     return result
+
 
 def gaia_cat_for_exp(racen, deccen, mjd=None):
 
@@ -48,27 +51,28 @@ def gaia_cat_for_exp(racen, deccen, mjd=None):
     # remove dummy -1 values from ipix
 
     ipix = ipix[ipix >= 0]
-    
+
     # probably also want to include the neighbors to the neighbors
     ipix_all = []
     for _ipix in ipix:
         ipix_all.append(healpy.pixelfunc.get_all_neighbours(nside,
                                                             _ipix))
-    
+
     ipix = np.unique(ipix_all)
 
     ipix = ipix[ipix >= 0]
-    
+
     ra_pixcenters, dec_pixcenters = healpy.pixelfunc.pix2ang(nside, ipix,
                                                               lonlat=True)
 
     gaia = gaia_xmatch.read_gaia_cat(ra_pixcenters, dec_pixcenters, mjd=mjd)
     return gaia
 
+
 def pattern_match(catalog, skyra, skydec, extname, gaia, arcmin_max):
 
     # cat needs to have fields xcentroid and ycentroid
-    # skyra, skydec are the initial guesses of the 
+    # skyra, skydec are the initial guesses of the
     # actual center of the field of view; these need to be within
     # arcmin_max of the true FOV center for this routine to succeed
 
@@ -79,9 +83,9 @@ def pattern_match(catalog, skyra, skydec, extname, gaia, arcmin_max):
     #     extname
     # probably also want
     #     expid retrieved from the catalog table
-
+    log = get_logger()
     cat = copy.deepcopy(catalog)
- # should just entirely rename racen, deccen to skyr, skydec ...
+    # should just entirely rename racen, deccen to skyr, skydec ...
     racen = skyra
     deccen = skydec
 
@@ -99,11 +103,11 @@ def pattern_match(catalog, skyra, skydec, extname, gaia, arcmin_max):
 
     gaia = gaia[dangle.degree < 2]
     g = SkyCoord(gaia['ra']*u.deg, gaia['dec']*u.deg)
-    
+
     cat = cat[cat['camera'] == extname]
 
     assert(len(cat) > 0)
-    
+
     n_desi_max = 150
 
     if len(cat) > n_desi_max:
@@ -122,7 +126,7 @@ def pattern_match(catalog, skyra, skydec, extname, gaia, arcmin_max):
 
     _g = None
     for i in range(len(cat)):
-        print(i+1, ' of ', len(cat))
+        log.debug('%d of %d', i+1, len(cat))
         c = SkyCoord(cat[i]['ra']*u.deg, cat[i]['dec']*u.deg)
         dangle = c.separation(g if _g is None else _g)
         w = (np.where(dangle.arcminute < arcmin_max))[0]
@@ -131,7 +135,7 @@ def pattern_match(catalog, skyra, skydec, extname, gaia, arcmin_max):
 
         assert(len(dangle) == len(x_gaia_guess))
         assert(len(dangle) == len(y_gaia_guess))
-        
+
         dx = cat[i]['xcentroid'] - x_gaia_guess[w]
         dy = cat[i]['ycentroid'] - y_gaia_guess[w]
         dx_all = np.concatenate((dx_all, dx))
@@ -143,7 +147,7 @@ def pattern_match(catalog, skyra, skydec, extname, gaia, arcmin_max):
             x_gaia_guess = x_gaia_guess[keep]
             y_gaia_guess = y_gaia_guess[keep]
             _g = g[keep]
-        
+
     assert(len(dx_all) == len(dy_all))
 
     axlim = max(np.round(arcmin_max*60.0/0.214), 1000.0)
@@ -152,7 +156,7 @@ def pattern_match(catalog, skyra, skydec, extname, gaia, arcmin_max):
     dy = 1.0
     nx = ny = 2*axlim
     counts, x_edges_left, y_edges_left = amm_2dhist(-1.0*axlim, -1.0*axlim,
-                                                    nx, ny, dx, dy, 
+                                                    nx, ny, dx, dy,
                                                     dx_all, dy_all)
 
     counts = counts.astype(float)
@@ -161,7 +165,7 @@ def pattern_match(catalog, skyra, skydec, extname, gaia, arcmin_max):
     fwhm_pix = 4.7
     sigma_pix = fwhm_pix/(2*np.sqrt(2*np.log(2)))
     smth = gaussian_filter(counts, sigma_pix, mode='constant')
-    
+
     counts_shape = counts.shape
     sidelen = counts_shape[0]
 
@@ -173,9 +177,9 @@ def pattern_match(catalog, skyra, skydec, extname, gaia, arcmin_max):
     xshift_best = x_edges_left[indx] + 0.5*dx
     yshift_best = y_edges_left[indy] + 0.5*dy
 
-# assumes dx = dy = 1 !!
+    # assumes dx = dy = 1 !!
     ycen_grid, xcen_grid = np.meshgrid(x_edges_left[0:(len(x_edges_left)-1)], y_edges_left[0:(len(y_edges_left)-1)])
-    
+
     d = np.sqrt(np.power(xcen_grid - xshift_best, 2) + np.power(ycen_grid - yshift_best, 2))
 
     r_max = 4*4.7 # roughly 4 asec radius

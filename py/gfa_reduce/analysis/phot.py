@@ -18,6 +18,8 @@ from gfa_reduce.analysis.djs_photcen import _loop_djs_photcen
 import copy
 import os
 import astropy.io.fits as fits
+from desiutil.log import get_logger
+
 
 def slices_to_table(slices, detsn, extname):
     nslc = len(slices)
@@ -119,11 +121,11 @@ def aper_rad_pix(extname):
 def do_aper_phot(data, catalog, extname, ivar_adu, sig_adu=None):
     # catalog should be the catalog with refined centroids
     # for **one GFA camera**
-
+    log = get_logger()
     if sig_adu is None:
         sig_adu = aper_phot_unc_map(ivar_adu)
 
-    print('Attempting to do aperture photometry')
+    log.info('Attempting to do aperture photometry')
     positions = list(zip(catalog['xcentroid'], catalog['ycentroid']))
 
     radii = aper_rad_pix(extname)
@@ -205,12 +207,12 @@ def get_nominal_fwhm_pix(extname):
 def refine_centroids(tab, image, bitmask, ivar_adu, sig_adu=None,
                      skip_2dg=False):
     # input table tab gets augmented with additional columns
-
-    print('Attempting to refine initial centroids')
+    log = get_logger()
+    log.info('Attempting to refine initial centroids')
 
     # this is for field acquisition mode
     if skip_2dg:
-        print('Skipping 2D Gaussian source fitting')
+        log.info('Skipping 2D Gaussian source fitting')
         tab['xcentroid'] = tab['xcen_detmap_fw']
         tab['ycentroid'] = tab['ycen_detmap_fw']
         tab['sig_major_pix'] = 5.0 # HACK !!!
@@ -326,8 +328,8 @@ def add_metadata_columns(tab, bitmask):
 
 def get_source_list(image, bitmask, extname, ivar_adu, max_cbox=31,
                     run_aper_phot=True, thresh=5, skip_2dg=False):
-
-    print('Attempting to catalog sources in ' + extname + ' image')
+    log = get_logger()
+    log.info('Attempting to catalog sources in %s image', extname)
 
     assert((thresh >= 4) and (thresh <= 100))
 
@@ -382,11 +384,11 @@ def pmgstars_forced_phot(xcentroid, ycentroid, image, elg=False,
 
     assert(len(xcentroid) > 0)
     assert(len(ycentroid) > 0)
-
+    log = get_logger()
     # create the apertures
     # get the fluxes
 
-    print('Attempting to do forced aperture photometry')
+    log.info('Attempting to do forced aperture photometry')
 
     # shouldn't happen...
     assert(not (elg and bgs))

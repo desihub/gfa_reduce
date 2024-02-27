@@ -15,6 +15,7 @@ from photutils import aperture_photometry
 from photutils import CircularAperture, CircularAnnulus, EllipticalAperture
 import photutils
 from astropy.stats import sigma_clipped_stats
+from desiutil.log import get_logger
 
 def use_for_fwhm_meas(tab, bad_amps=None, snr_thresh=20,
                       no_sig_major_cut=False):
@@ -23,21 +24,21 @@ def use_for_fwhm_meas(tab, bad_amps=None, snr_thresh=20,
     # measurement
 
     assert(len(np.unique(tab['camera'])) == 1)
-        
+
     good = ((tab['dq_flags'] == 0) & (tab['min_edge_dist_pix'] > 30) &
             (tab['detmap_peak'] >= snr_thresh))
 
     if not no_sig_major_cut:
         good = (good & (tab['sig_major_pix'] > 1) & np.isfinite(tab['sig_major_pix']))
 
-        # if bad amps specified, it should be a list 
+        # if bad amps specified, it should be a list
     # containing the amps thought to be in a state of bad readout
     if (bad_amps is not None) and (len(bad_amps) > 0):
         amp_ok = np.array([(t['amp'] not in bad_amps) for t in tab])
         good = (good & amp_ok)
 
     return good
-    
+
 def has_wrong_dimensions(exp):
     # check meant to catch simulated data
     # or other rare anomalies where GFA images do not have the
@@ -50,7 +51,7 @@ def has_wrong_dimensions(exp):
         if (sh[0] != 1032) or (sh[1] != 2048):
             return True
     return False
-    
+
 def nominal_pixel_area_sq_asec(extname):
 
     # based on my WCS templates
@@ -153,7 +154,7 @@ def gfa_pixel_ymin(pix_center=False, quadrant=None):
     return ymin
 
 def gfa_center_pix_coords():
-    # native binning, this is the exact center of the image, 
+    # native binning, this is the exact center of the image,
     # which is at the corner of four pixels because of even sidelengths
 
     par = common.gfa_misc_params()
@@ -166,7 +167,7 @@ def gfa_center_pix_coords():
 def gfa_boundary_pixel_coords(pix_center=True):
     par = common.gfa_misc_params()
 
-    x_top = np.arange(gfa_pixel_xmin(pix_center=pix_center), 
+    x_top = np.arange(gfa_pixel_xmin(pix_center=pix_center),
                       gfa_pixel_xmax(pix_center=pix_center) + 1)
     x_left = np.zeros(par['height_pix_native'] + 1*(not pix_center)) + \
                       gfa_pixel_xmin(pix_center=pix_center)
@@ -187,7 +188,7 @@ def gfa_boundary_pixel_coords(pix_center=True):
 def gfa_corner_pixel_coords(pix_center=False, wrap=False):
     # LL -> UL -> UR -> LR
     x_pix = [gfa_pixel_xmin(pix_center=pix_center),
-             gfa_pixel_xmin(pix_center=pix_center), 
+             gfa_pixel_xmin(pix_center=pix_center),
              gfa_pixel_xmax(pix_center=pix_center),
              gfa_pixel_xmax(pix_center=pix_center)]
 
@@ -258,7 +259,7 @@ def create_det_ids(catalog, extname, fname_in, add_col=True, cube_index=None):
 
     if cube_index is not None:
         det_ids = [(det_id + 'g' + str(cube_index).zfill(5)) for det_id in det_ids]
-    
+
     if add_col:
         catalog['det_id'] = det_ids
     else:
@@ -275,7 +276,7 @@ def slice_indices_for_quadrant(quadrant):
 
 def expid_from_raw_filename(fname):
     # fname should be a single string not a list/array of strings
-    
+
     f = os.path.split(fname)[-1]
 
     f = f.split('-', 1)[1]
@@ -287,11 +288,11 @@ def expid_from_raw_filename(fname):
 
     if pos != -1:
         string = string[0:pos]
-    
+
     return int(string)
 
 def average_bintable_metadata(tab):
-
+    log = get_logger()
     result = Table()
 
     result['EXPTIME'] = [np.mean(tab['EXPTIME'])]
@@ -300,10 +301,10 @@ def average_bintable_metadata(tab):
     try:
         result['REQTIME'] = [np.mean(tab['REQTIME'])]
     except:
-        print('no REQTIME column in guide cube binary table???')
+        log.warning('no REQTIME column in guide cube binary table???')
 
     result['NIGHT'] = [tab['NIGHT'][0]]
-    
+
     columns_to_average = ['MJD-OBS',
                           'GAMBNTT',
                           'GFPGAT',
@@ -324,8 +325,8 @@ def average_bintable_metadata(tab):
 
 def sanity_check_catalog(cat):
     # can build more checks into this as time goes on...
-
-    print('Sanity checking source catalog...')
+    log = get_logger()
+    log.info('Sanity checking source catalog...')
     assert(np.sum(np.isfinite(cat['xcentroid'])) == len(cat))
     assert(np.sum(np.isfinite(cat['ycentroid'])) == len(cat))
 
@@ -383,7 +384,7 @@ def _stamp_radius_mask(sidelen, return_radius=False,
 
     assert(sidelen == np.round(sidelen))
     assert(sidelen % 2 == 1)
-    
+
     ybox = np.arange(sidelen*sidelen, dtype=int) // sidelen
     xbox = np.arange(sidelen*sidelen, dtype=int) % sidelen
 
@@ -395,7 +396,7 @@ def _stamp_radius_mask(sidelen, return_radius=False,
 
     xbox = xbox.astype('float')
     ybox = ybox.astype('float')
-        
+
     xbox -= x_centroid
     ybox -= y_centroid
 
@@ -413,13 +414,13 @@ def _test_shift():
     im = fits.getdata('gaussian.fits')
 
     result = _shift_stamp(im, 0.5, 0.0)
-    
+
 def _resize(arr, fac):
     assert(np.round(fac) == fac)
 
     fac = int(fac)
     assert(fac >= 1)
-    
+
     return np.repeat(np.repeat(arr, fac, axis=0), fac, axis=1)
 
 def _fiber_fracflux(psf, x_centroid=None, y_centroid=None,
@@ -449,9 +450,9 @@ def _fiber_fracflux(psf, x_centroid=None, y_centroid=None,
 
     numerator = phot['aperture_sum'][0] - aper_bkg_tot # aper flux
     denominator = np.sum(psf)
-    
+
     frac = numerator/denominator
-        
+
     return frac, numerator, denominator
 
 def _aperture_corr_fac(psf, x_centroid=None, y_centroid=None):
@@ -467,7 +468,7 @@ def _aperture_corr_fac(psf, x_centroid=None, y_centroid=None):
                                  fib_rad_pix=rad_pix)
 
     return fac
-    
+
 def zenith_zeropoint_photometric_1amp(extname, amp):
     par = common.gfa_misc_params()
 
@@ -481,7 +482,7 @@ def zenith_zeropoint_photometric_1amp(extname, amp):
     assert(np.sum(good) == 1)
 
     return tab[good][0]['ZP_ADU_PER_S']
-    
+
 def median_zenith_camera_zeropoint(extname):
     # wraps zenith_zeropoint_photometric_1amp
     # eventually want to do a better job of dealing with amp-to-amp
@@ -507,7 +508,7 @@ def zp_photometric_at_airmass(extname, airmass, amp=None):
     par = common.gfa_misc_params()
 
     # account for airmass (k term from DESI-5418-v2)
-    
+
     # "photometric" here means 'in photometric conditions' at this airmass
     zp_photometric = zp_zenith - (airmass - 1)*par['kterm']
 
@@ -522,15 +523,15 @@ def transparency_from_zeropoint(zp_image, airmass, extname):
         return np.nan
     if not np.isfinite(zp_image):
         return np.nan
-    
+
     zp_photometric = zp_photometric_at_airmass(extname, airmass)
-    
+
     transparency = 10**((zp_image - zp_photometric)/2.5)
 
     return transparency
 
 def _gauss2d_profile(sidelen, xcen, ycen, peak_val, sigma, bg=0):
-    
+
     ybox = np.arange(sidelen*sidelen, dtype=int) // sidelen
     xbox = np.arange(sidelen*sidelen, dtype=int) % sidelen
 
@@ -540,7 +541,7 @@ def _gauss2d_profile(sidelen, xcen, ycen, peak_val, sigma, bg=0):
     xcen = float(xcen)
     ycen = float(ycen)
     sigma = float(sigma)
-    
+
     dx2 = np.power(xbox - xcen, 2)
     dy2 = np.power(ybox - ycen, 2)
 
@@ -560,7 +561,7 @@ def _moffat2d_profile(sidelen, xcen, ycen, peak_val, fwhm, bg=0, beta=3.5):
 
     alpha = fwhm/(2.0*np.sqrt(2**(1/beta) - 1))
     # beta = 2.5 is the IRAF default value apparently
-    
+
     ybox = np.arange(sidelen*sidelen, dtype=int) // sidelen
     xbox = np.arange(sidelen*sidelen, dtype=int) % sidelen
 
@@ -570,7 +571,7 @@ def _moffat2d_profile(sidelen, xcen, ycen, peak_val, fwhm, bg=0, beta=3.5):
     xcen = float(xcen)
     ycen = float(ycen)
     alpha = float(alpha)
-    
+
     dx2 = np.power(xbox - xcen, 2)
     dy2 = np.power(ybox - ycen, 2)
 
@@ -582,7 +583,7 @@ def _moffat2d_profile(sidelen, xcen, ycen, peak_val, fwhm, bg=0, beta=3.5):
     prof += bg
 
     prof = prof.reshape((sidelen, sidelen))
-    
+
     return prof
 
 def _moffat2d_metric(p, xcen, ycen, image):
@@ -598,7 +599,7 @@ def _moffat2d_metric(p, xcen, ycen, image):
     model = _moffat2d_profile(sidelen, xcen, ycen, p[1], p[0])
 
     return np.sum(np.power(image-model, 2))
-    
+
 def _gauss2d_metric(p, xcen, ycen, image):
     # p[0] : sigma (pixels)
     # p[1] : peak value
@@ -624,7 +625,7 @@ def _fit_moffat2d(xcen, ycen, image):
     res = minimize(_moffat2d_metric, [6.0, 1.0], args=(xcen, ycen, image), method='Nelder-Mead', options={'maxfev': 200, 'disp': False, 'adaptive': False, 'fatol': 1.0e-5})
 
     return res
-    
+
 def _test_gauss2d_fit():
     tab = fits.getdata('/global/cfs/cdirs/desi/users/ameisner/GFA/run/psf_flux_weighted_centroid/20200131/00045485/gfa-00045485_ccds.fits')
 
@@ -636,12 +637,13 @@ def _test_gauss2d_fit():
 
 # maybe this belongs in "io" ...
 def load_lst():
+    log = get_logger()
     par = common.gfa_misc_params()
 
     fname = os.path.join(os.environ[par['meta_env_var']],
                          par['ephem_filename'])
 
-    print('READING EPHEMERIS FILE : ', fname)
+    log.info('READING EPHEMERIS FILE : %s', fname)
     assert(os.path.exists(fname))
 
     eph = fits.getdata(fname)
@@ -653,7 +655,7 @@ def interp_ephemeris(mjd, eph=None, colname='LST_DEG'):
     # for now assume that mjd is a scalar, can deal with vectorization later..
 
     # LST value returned is in degrees
-    
+
     if (mjd is None) or (mjd == 0) or (np.isnan(mjd)):
         return np.nan
 
@@ -683,7 +685,7 @@ def interp_ephemeris(mjd, eph=None, colname='LST_DEG'):
             val_lower -= 360.0
 
     result = ((mjd - mjd_lower)*val_upper + (mjd_upper - mjd)*val_lower)/(mjd_upper-mjd_lower)
-    
+
     # bound to be within 0 -> 360
 
     if colname in ['LST_DEG', 'MOONRA']:
@@ -700,13 +702,13 @@ def _zenith_distance(ra, dec, lst_deg):
 
     if np.isnan(ra) or np.isnan(dec) or np.isnan(lst_deg):
         return np.nan
-    
+
     # for now assume scalar inputs, can work on vectorization later if desired
 
     par = common.gfa_misc_params()
-    
+
     kpno_latitude =  par['kpno_lat_deg']
-    
+
     c = SkyCoord(ra*u.deg, dec*u.deg)
     zenith = SkyCoord(lst_deg*u.deg, kpno_latitude*u.deg)
 
@@ -727,7 +729,7 @@ def _get_ha(ra_deg, lst_deg, mountdec):
         ra_deg -= 360.0
     elif ra_deg < 0:
         ra_deg += 360.0
-    
+
     if (np.abs(lst_deg - ra_deg) > 180) and ((lst_deg - ra_deg) > 0):
         lst_deg -= 360.0
     if (np.abs(lst_deg - ra_deg) > 180) and ((lst_deg - ra_deg) < 0):
@@ -736,7 +738,7 @@ def _get_ha(ra_deg, lst_deg, mountdec):
     ha = lst_deg - ra_deg
 
     return ha
-        
+
 def pm_pi_corr_fiberassign(gfa_targets, mjd):
     # correct fiberassign TARGET_RA, TARGET_DEC to
     # relevant DESI observation epoch based on available parallaxes
@@ -764,7 +766,7 @@ def pm_pi_corr_fiberassign(gfa_targets, mjd):
     gfa_targets['TARGET_DEC'] = dec_corr
 
 def coadd_cube_index_range(bintable, cube_index, mjdrange):
-
+    log = get_logger()
     if cube_index != -1:
         return cube_index, cube_index
 
@@ -779,7 +781,7 @@ def coadd_cube_index_range(bintable, cube_index, mjdrange):
                      (bintable['MJD-OBS'] < mjdmax))[0]
 
         if len(w) == 0:
-            print('NO TEMPORAL OVERLAP BETWEEN GUIDE CUBE AND SPECTROSCOPY !?')
+            log.critical('NO TEMPORAL OVERLAP BETWEEN GUIDE CUBE AND SPECTROSCOPY !?')
             assert(False)
 
         # always assume zeroth frame is acquisition image !!
@@ -808,14 +810,14 @@ def moon_illumination(time, location):
 def _patch_guider_mjd_obs(exp):
     # for cases such as guide cubes on night 20210106
     # where MJD-OBS is absent from the GUIDER header
-    # but can be filled in based on the 
+    # but can be filled in based on the
 
     # exp is an exposure object
-
+    log = get_logger()
     if 'MJD-OBS' in exp.exp_header:
         return
     else:
-        print('PATCHING MISSING GUIDER HEADER MJD-OBS')
+        log.warning('PATCHING MISSING GUIDER HEADER MJD-OBS')
         exp.exp_header['MJD-OBS'] = list(exp.bintables.values())[0][0]['MJD-OBS']
 
 def _asymmetry_score(psf, _xcen=None, _ycen=None):
@@ -918,6 +920,7 @@ def get_obs_night(date_string_local, time_string_local):
         return date_string_yesterday
 
 def get_obs_night_now(verbose=False):
+    log = get_logger()
     now = datetime.now()
 
     date_string_local = now.strftime("%Y/%m/%d")
@@ -925,9 +928,8 @@ def get_obs_night_now(verbose=False):
 
     obsnight = get_obs_night(date_string_local, time_string_local)
 
-    if verbose:
-        print(now, ' = observing night ', obsnight)
-    
+    log.debug('%s = observing night %s', now, obsnight)
+
     return obsnight
 
 def _get_area_from_ap(ap):
@@ -950,7 +952,7 @@ def _subselect_bintable_rows(tab):
     # (this function will crash if somehow tab is corrupt or
     # not a table-like structure or MJD-OBS is missing)
 
-    # this was put into place due to replication of 
+    # this was put into place due to replication of
     # guide cube binary table rows on observing night
     # 20210519
 

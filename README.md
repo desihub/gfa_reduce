@@ -6,7 +6,11 @@ Reduce and summarize GFA images.
 
 ### py/gfa_reduce/scripts/
 
-Miscellaneous scripts, some of which are not intended to be used as part of the production pipeline.
+Scripts actively used for GFA reduction.
+
+### py/gfa_reduce/attic/
+
+Unused and unmaintained scripts.
 
 ### py/gfa_reduce/analysis/
 

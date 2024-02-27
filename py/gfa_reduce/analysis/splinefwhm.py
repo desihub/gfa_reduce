@@ -1,18 +1,20 @@
 import numpy as np
 from scipy.interpolate import CubicSpline
+from desiutil.log import get_logger
+
 
 def _atv_splinefwhm(_radii, _profile):
-
+    log = get_logger()
     sind = np.argsort(_radii)
     radii = _radii[sind]
     profile = _profile[sind]
-    
+
     nrad = len(radii)
 
     _max = np.max(profile)
 
     if profile[0] != _max:
-        print('Warning: Profile peak is off-center!')
+        log.warning('Profile peak is off-center!')
         return np.nan
 
     fac = 400
@@ -36,12 +38,12 @@ def _atv_splinefwhm(_radii, _profile):
             break
 
     if (not found) or (_i < 2):
-        print('Warning: Unable to measure FWHM!')
+        log.warning('Unable to measure FWHM!')
         return np.nan
 
     fwhm = splrad[_i] + splrad[_i-1]
 
     return fwhm
-    
 
-    
+
+

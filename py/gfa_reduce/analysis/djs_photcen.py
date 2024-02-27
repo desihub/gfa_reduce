@@ -1,4 +1,6 @@
 import numpy as np
+from desiutil.log import get_logger
+
 
 def djs_photcen(xcen, ycen, image, cbox=7, cmaxiter=10, cmaxshift=0.0,
                 ceps=0.0):
@@ -9,7 +11,7 @@ def djs_photcen(xcen, ycen, image, cbox=7, cmaxiter=10, cmaxshift=0.0,
     # output needs to encapsulate three things :
     #     actual xcen, ycen recentered results
     #     qmaxshift boolean flag
-
+    log = get_logger()
     dims = image.shape
     assert(len(dims) == 2)
     naxis1 = dims[1] # numpy indexing convention; "x" direction
@@ -25,7 +27,7 @@ def djs_photcen(xcen, ycen, image, cbox=7, cmaxiter=10, cmaxshift=0.0,
     xcen_orig = xcen
     ycen_orig = ycen
     ###
-    
+
     while (iiter <= cmaxiter) and (qmaxshift == 0) and (np.max(np.abs(dcen)) > ceps):
         if (iiter > 0):
             dcen = np.array([xcen, ycen])
@@ -37,7 +39,7 @@ def djs_photcen(xcen, ycen, image, cbox=7, cmaxiter=10, cmaxshift=0.0,
         iEnd = min(iEnd, naxis1) # this isn't in IDL version, which is concerning
 
         if (iStart >= naxis1) or (iEnd <= 0):
-            print('Error - No pixels in X range')
+            log.error('No pixels in X range')
             return xcen_orig, ycen_orig, 1
         iLen = iEnd - iStart # note the lack of "+ 1" at end here !
 
@@ -48,7 +50,7 @@ def djs_photcen(xcen, ycen, image, cbox=7, cmaxiter=10, cmaxshift=0.0,
         jEnd = min(jEnd, naxis2) # this isn't in IDL version, which is concerning
 
         if (jStart >= naxis2) or (jEnd <= 0):
-            print('Error - No pixels in Y range')
+            log.error('No pixels in Y range')
             return xcen_orig, ycen_orig, 1
         jLen = jEnd - jStart # note the lack of "+ 1" at end here !
 
@@ -70,7 +72,7 @@ def djs_photcen(xcen, ycen, image, cbox=7, cmaxiter=10, cmaxshift=0.0,
         xPixNum = (iIndx + iStart).astype(int)
         yPixNum = (jIndx + jStart).astype(int)
         pixnum = xPixNum + naxis1*yPixNum
-    
+
         fracs = (xB[iIndx] - xA[iIndx])*(yB[jIndx] - yA[jIndx])
 
         subimg = image[yPixNum, xPixNum]
