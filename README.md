@@ -4,40 +4,51 @@ Reduce and summarize GFA images.
 
 ## Directories
 
-### py/scripts/
-miscellaneous scripts not intended to be used as part of the production pipeline
+### py/gfa_reduce/scripts/
+
+Miscellaneous scripts, some of which are not intended to be used as part of the production pipeline.
 
 ### py/gfa_reduce/analysis/
-core image analysis such as source detection, centroid measurements, flux measurements
+
+Core image analysis such as source detection, centroid measurements, flux measurements.
 
 ### py/gfa_reduce/imred/
-utilities for converting raw images to reduced images
+
+Utilities for converting raw images to reduced images.
 
 ### py/gfa_reduce/xmatch/
-cross-matching utilities, such as for matching to Gaia or other external catalogs
+
+Cross-matching utilities, such as for matching to Gaia or other external catalogs.
 
 ## Top-level py/gfa_reduce Python files
 
 ### py/gfa_reduce/gfa_red.py
-primary driver that gets called to run the GFA reduction pipeline end to end
+
+Primary driver that gets called to run the GFA reduction pipeline end to end.
 
 ### py/gfa_reduce/gfa_wcs.py
-WCS-related utilities
+
+WCS-related utilities.
 
 ### py/gfa_reduce/common.py
-miscellaneous utilities
+
+Miscellaneous utilities.
 
 ### py/gfa_reduce/dark_current.py
-utilities related to dark current
+
+Utilities related to dark current.
 
 ### py/gfa_reduce/exposure.py
-class that encapsulates a single GFA exposure consisting of multiple single-camera images
+
+Class that encapsulates a single GFA exposure consisting of multiple single-camera images.
 
 ### py/gfa_reduce/image.py
-class that encapsulates a single-camera image (and its metadata) drawn from a single GFA exposure
+
+Class that encapsulates a single-camera image (and its metadata) drawn from a single GFA exposure.
 
 ### py/gfa_reduce/io.py
-input/output utilities
+
+Input/output utilities.
 
 ## Convention for pixel coordinates
 
