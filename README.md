@@ -1,6 +1,6 @@
 # gfa_reduce
 
-[![GitHub Actions CI Status](https://github.com/github/docs/actions/workflows/python-package.yml/badge.svg?branch=desiInstall-compatibility)](https://github.com/desihub/gfa_reduce/actions)
+[![GitHub Actions CI Status](https://github.com/desihub/gfa_reduce/actions/workflows/python-package.yml/badge.svg?branch=desiInstall-compatibility)](https://github.com/desihub/gfa_reduce/actions)
 [![Coverage Status](https://coveralls.io/repos/github/desihub/gfa_reduce/badge.svg?branch=desiInstall-compatibility)](https://coveralls.io/github/desihub/gfa_reduce?branch=desiInstall-compatibility)
 
 Reduce and summarize GFA images.
