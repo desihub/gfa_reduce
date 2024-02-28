@@ -250,8 +250,36 @@ def amp_bdy_coords(amp):
 def retrieve_git_rev(fname=None):
     """Find a git revision string based on `fname`.
 
-    WARNING: This assumes `fname` is actually in a git clone, *not* an installed
-    tagged package.
+    Parameters
+    ----------
+    fname : :class:`str`, optional
+        A file name in a git clone. If not set ``__file__`` will be used.
+
+    Returns
+    -------
+    :class:`str`
+        A hex string specifying the git revision.
+
+    Raises
+    ------
+    RuntimeError
+        If `fname` is not actually in a git clone.
+
+    Warnings
+    --------
+    This assumes `fname` is actually in a git clone, *not* an installed,
+    tagged package. During daily processing, gfa_reduce should be run
+    off of version = main and desimodules = main, thus satisfying the
+    requirements for this function. Operation in other environments is
+    not currently supported.
+
+    Notes
+    -----
+    This function runs the equivalent of::
+
+        cd `dirname $fname`
+        git rev-parse --short HEAD
+
     """
     if fname is None:
         fname = __file__
