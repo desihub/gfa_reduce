@@ -1,5 +1,13 @@
-#!/usr/bin/env python
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.scripts.gfa_single_night
+===================================
 
+Process a single night of GFA images.
+
+Revised from Aaron Meisner's gfa_realtime.py.
+"""
 import sys, os, time
 from datetime import datetime
 import multiprocessing as mp
@@ -12,12 +20,6 @@ import astropy.io.fits as fits
 import json
 import gfa_reduce
 from desiutil.log import get_logger
-
-# revised from Aaron Meisner's gfa_realtime.py
-
-default_out_basedir = os.environ['DEFAULT_REDUX_DIR']
-# dts_raw = os.environ['DTS_RAW']
-dts_raw = os.environ['DESI_SPECTRO_DATA']
 
 
 class ProcItem:
@@ -119,11 +121,23 @@ def _run(workerid, q, out_basedir, focus):
 
 
 def _gfa_single_night(night='20210405', numworkers=8,
-                      out_basedir=default_out_basedir, guider=True, focus=False,
-                      indir=dts_raw):
+                      out_basedir=None, guider=True, focus=False,
+                      indir=None):
     log = get_logger()
     t0 = time.time()
 
+    if indir is None:
+        try:
+            indir = os.environ['DESI_SPECTRO_DATA']
+        except KeyError:
+            raise ValueError('DESI_SPECTRO_DATA must be set or "indir" parameter specified!')
+    if out_basedir is None:
+        try:
+            out_basedir = os.environ['DEFAULT_REDUX_DIR']
+        except KeyError:
+            raise ValueError('DEFAULT_REDUX_DIR must be set or "out_basedir" parameter specified!')
+    log.debug('indir = "%s"', indir)
+    log.debug('out_basedir = "%s"', out_basedir)
     log.info('Running on host : %s', os.environ['HOSTNAME'])
     log.info('PATH TO gfa_reduce IS : %s', gfa_reduce.__file__)
 
@@ -235,6 +249,8 @@ def _gfa_single_night(night='20210405', numworkers=8,
 
 
 if __name__=="__main__":
+    dts_raw = os.environ['DESI_SPECTRO_DATA']
+    default_out_basedir = os.environ['DEFAULT_REDUX_DIR']
     descr = 'reduce a single-night GFA guide data'
     parser = argparse.ArgumentParser(description=descr)
 

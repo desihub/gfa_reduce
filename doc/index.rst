@@ -29,6 +29,7 @@ Contents
 
    api.rst
    daily_summary_imports.rst
+   changes.rst
 
 Indices and tables
 ==================
