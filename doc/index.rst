@@ -21,6 +21,11 @@ These packages must be installed for ``gfa_reduce`` to work properly:
 * `healpy <https://healpy.readthedocs.io/en/latest/index.html>`_
 * `photutils <https://photutils.readthedocs.io/en/stable/index.html>`_
 
+In addition, these DESI packages are required:
+
+* `desimeter <https://github.com/desihub/desimeter>`
+* `desiutil <https://github.com/desihub/desiutil>`
+
 Contents
 ========
 
