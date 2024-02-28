@@ -152,7 +152,8 @@ class PSF:
     def flux_weighted_centroid(self):
         x_start = y_start = self.sidelen // 2
 
-        self.log.info('djs_photcen using cbox = ', self.cbox, ' x_start = ', x_start, ' y_start = ', y_start)
+        self.log.info('djs_photcen using cbox = %0.4f x_start = %d y_start = %d',
+                      self.cbox, x_start, y_start)
 
         xcen, ycen, q = djs_photcen(x_start, y_start, self.psf_image,
                                     cbox=self.cbox,
