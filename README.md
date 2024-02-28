@@ -1,5 +1,8 @@
 # gfa_reduce
 
+[![example branch parameter](https://github.com/github/docs/actions/workflows/main.yml/badge.svg?desiInstall-compatibility)](https://github.com/desihub/gfa_reduce/actions)
+[![Coverage Status](https://coveralls.io/repos/github/desihub/gfa_reduce/badge.svg?branch=desiInstall-compatibility)](https://coveralls.io/github/desihub/gfa_reduce?branch=desiInstall-compatibility)
+
 Reduce and summarize GFA images.
 
 ## Directories
