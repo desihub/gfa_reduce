@@ -2,7 +2,11 @@
 Change Log
 ==========
 
-1.0.0 (2024-01-xx, unreleased)
+*Note*: prior to ``0.30.0`` an alternate tag name convention was used. New
+tags have been created to be consistent with ``X.Y.Z`` conventions, and the
+corresponding old tag is listed with the date in the titles below.
+
+1.0.0 (2024-02-xx, unreleased)
 ------------------------------
 
 First version for NERSC-only GFA processing, with :command:`desiInstall` support (PR `#20`_).
