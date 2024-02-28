@@ -1,22 +1,25 @@
-#!/usr/bin/env python
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.scripts.concat_ccds
+==============================
 
-import astropy.io.fits as fits
-from astropy.table import Table, vstack, hstack
-import glob
-import numpy as np
-import os
+Produce a summary file of GFA processed images.
+"""
 import argparse
-from multiprocessing import Pool
 import datetime
+import glob
+import os
+from multiprocessing import Pool
+import numpy as np
+import astropy.io.fits as fits
+from astropy.table import Table, vstack
 
 from desiutil.log import get_logger, DEBUG
 
 
 def _get_default_basedir(acq=False):
-    basedir = os.environ['GFA_REDUX_BASE'] + '_' + \
-              ('matched' if not acq else 'acq')
-
-    return basedir
+    return os.environ['GFA_REDUX_BASE'] + '_' + ('matched' if not acq else 'acq')
 
 
 def cube_index_median(tab, extra_cuts=False, matched_coadd=True):
@@ -82,22 +85,47 @@ def cube_index_median(tab, extra_cuts=False, matched_coadd=True):
     return result
 
 
-def _nights_list(night_min, night_max, basedir=None, acq=False):
+def nights_list(night_min, night_max, basedir=None, acq=False, empty=False):
+    """Find a set of nights for processing.
 
+    The original code involved redundant conversions to :class:`np.array`,
+    so it has been completely rewritten. In addition, it is sometimes
+    necessary to include empty directories left over from previous rounds
+    of processing.
+
+    Parameters
+    ----------
+    night_min : :class:`str`
+        The earliest night to search for, in YYYYMMDD format.
+    night_max : :class:`str`
+        The last night to search for, in YYYYMMDD format.
+    basedir : :class:`str`, optional
+        The directory containing night directories.
+    acq : :class:`bool`, optional
+        If ``True`` set the ``acq`` suffix when searching for `basedir`.
+    empty : :class:`bool`, optional
+        If ``True``, *remove* empty night directories from the list
+        so that they can be reprocessed.
+
+    Returns
+    -------
+    :class:`list`
+        The list of nights found.
+    """
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
-
     dirs = glob.glob(basedir + '/????????')
-
-    _dirs = np.array([os.path.split(d)[-1] for d in dirs])
-
-    dirs = np.array(dirs)
-    dirs = dirs[(_dirs >= night_min) & (_dirs <= night_max)]
-
-    nights = [os.path.split(d)[-1] for d in dirs]
-
-    nights.sort()
-    return nights
+    if empty:
+        found_dirs = list()
+        for d in dirs:
+            l = os.listdir(d)
+            if len(l) > 0:
+                found_dirs.append(d)
+    else:
+        found_dirs = dirs
+    found_nights = [os.path.basename(d) for d in found_dirs]
+    trimmed_nights = [n for n in found_nights if n >= night_min and n <= night_max]
+    return sorted(trimmed_nights)
 
 
 def _read_one_ccds_table(fname):
@@ -159,10 +187,10 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
 
     log.info('Reading in _ccds tables...')
 
-    nights = _nights_list(night_min, night_max, basedir=basedir, acq=acq)
+    nights = nights_list(night_min, night_max, basedir=basedir, acq=acq)
 
     if user_basedir is not None:
-        nights_user = _nights_list(night_min, night_max, basedir=user_basedir,
+        nights_user = nights_list(night_min, night_max, basedir=user_basedir,
                                    acq=acq)
         nights = list(set(nights_user + nights))
         nights.sort()
@@ -298,7 +326,7 @@ def _append_many_nights(night_min='20201214', night_max='99999999',
     next_obsnight = _next_obsnight(night=latest_night)
 
     # Check for new data
-    nights = _nights_list(night_min, night_max, basedir=basedir, acq=acq)
+    nights = nights_list(night_min, night_max, basedir=basedir, acq=acq)
 
     if len(nights) == 0:
         log.error('No reduced GFA data found in %s!', basedir)

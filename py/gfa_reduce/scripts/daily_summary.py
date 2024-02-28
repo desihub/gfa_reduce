@@ -21,7 +21,7 @@ import numpy as np
 from desiutil.iers import freeze_iers
 from desiutil.log import get_logger, DEBUG
 
-from .concat_ccds import _nights_list, _get_default_basedir, _append_many_nights
+from .concat_ccds import nights_list, _get_default_basedir, _append_many_nights
 from .gfa_single_night import _gfa_single_night
 
 
@@ -42,8 +42,8 @@ def gfa_recent_nights(workers=8):
     log.debug('basedir = %s', basedir)
     log.debug('out_basedir = %s', out_basedir)
 
-    nights = _nights_list('20210405', '99999999', basedir=basedir)
-    processed_nights = _nights_list('20210405', '99999999', basedir=out_basedir)
+    nights = nights_list('20210405', '21000101', basedir=basedir)
+    processed_nights = nights_list('20210405', '21000101', basedir=out_basedir, empty=False)
 
     log.debug('Most recent night with raw GFA data: %d', max(nights))
     log.debug('Most recent night with processed GFA data: %d', max(processed_nights))
