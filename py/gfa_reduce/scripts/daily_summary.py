@@ -87,7 +87,7 @@ def gfa_daily_summary(workers=8):
     outdir = os.environ['GFA_SUMMRY_FILE_DIR']
     log.debug('basedir = %s', basedir)
     log.debug('outdir = %s', outdir)
-    _append_many_nights(night_min='20210405', night_max='99999999', basedir=basedir,
+    _append_many_nights(night_min='20210405', night_max='21000101', basedir=basedir,
                         acq=False, phase='SV3', outdir=outdir, user_basedir=None,
                         workers=workers)
     return
