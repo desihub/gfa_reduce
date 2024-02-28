@@ -1,15 +1,19 @@
-#
-# internal modules needed by desi_gfa_reduce_daily_summary
-#
-daily_summary imports:
-    - concat_ccds imports:
-        - None
-    - gfa_single_night imports:
-        - gfa_reduce (to get __file__) imports:
-            - None
-        - gfa_reduce.common imports:
-            - None
-        - gfa_reduce.gfa_red imports:
+================
+Internal imports
+================
+
+This is the internal import tree used by :command:`desi_gfa_reduce_daily_summary`.
+This exercise was performed on 2024-02-27 to ensure that there were no
+circular imports in this relatively complex package.
+
+- :mod:`gfa_reduce.scripts.daily_summary` imports:
+  - :mod:`gfa_reduce.scripts.concat_ccds`
+  - :mod:`gfa_reduce.scripts.gfa_single_night` imports:
+    - :mod:`gfa_reduce` (to get ``__file__``)
+    - :mod:`gfa_reduce.common`
+    - :mod:`gfa_reduce.gfa_red` imports:
+
+::
             - gfa_reduce.io imports:
                 - gfa_reduce.image imports:
                     - gfa_reduce.common imports:
