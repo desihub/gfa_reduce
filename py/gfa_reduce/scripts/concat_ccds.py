@@ -112,6 +112,7 @@ def nights_list(night_min, night_max, basedir=None, acq=False, empty=False):
     :class:`list`
         The list of nights found.
     """
+    log = get_logger()
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
     dirs = glob.glob(basedir + '/????????')
@@ -119,6 +120,7 @@ def nights_list(night_min, night_max, basedir=None, acq=False, empty=False):
         found_dirs = list()
         for d in dirs:
             l = os.listdir(d)
+            log.debug('%s = %s', d, str(l))
             if len(l) > 0:
                 found_dirs.append(d)
     else:
