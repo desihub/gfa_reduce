@@ -43,7 +43,7 @@ def gfa_recent_nights(workers=8):
     log.debug('out_basedir = %s', out_basedir)
 
     nights = nights_list('20210405', '21000101', basedir=basedir)
-    processed_nights = nights_list('20210405', '21000101', basedir=out_basedir, empty=False)
+    processed_nights = nights_list('20210405', '21000101', basedir=out_basedir, empty=True)
 
     log.debug('Most recent night with raw GFA data: %s', max(nights))
     log.debug('Most recent night with processed GFA data: %s', max(processed_nights))
