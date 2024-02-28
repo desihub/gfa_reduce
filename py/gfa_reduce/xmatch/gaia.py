@@ -144,8 +144,8 @@ def read_gaia_cat(ra, dec, ps1=False, mjd=None):
             result['ra'][full_solution] = ra_corr[full_solution]
             result['dec'][full_solution] = dec_corr[full_solution]
 
-            log.info('adjusted ', np.sum(full_solution), ' of ', len(result),
-                     ' Gaia source positions for proper motion and parallax')
+            log.info('adjusted %d of %d Gaia source positions for proper motion and parallax',
+                     np.sum(full_solution), len(result))
 
             assert(np.sum(np.isfinite(result['ra'])) == len(result))
             assert(np.sum(np.isfinite(result['dec'])) == len(result))

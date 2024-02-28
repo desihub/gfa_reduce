@@ -281,7 +281,7 @@ def read_dark_image(extname, exptime, t_celsius):
         dark_fname = os.path.join(os.environ[par['meta_env_var']], \
                                   par['master_dark_filename'])
 
-    log.info('Attempting to read master dark : %s, extension name : ',
+    log.info('Attempting to read master dark : %s, extension name : %s.',
              dark_fname, extname)
 
     assert(os.path.exists(dark_fname))

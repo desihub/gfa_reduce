@@ -115,19 +115,16 @@ def nights_list(night_min, night_max, basedir=None, acq=False, empty=False):
     log = get_logger()
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
-    log.info('basedir = %s', basedir)
+    log.debug('basedir = %s', basedir)
     dirs = glob.glob(basedir + '/????????')
     if empty:
-        log.info('empty = True')
         found_dirs = list()
         for d in dirs:
-            log.debug('l = os.listdir("%s")', d)
             l = os.listdir(d)
-            log.info('%s = %s', d, str(l))
+            log.debug('%s = %s', d, str(l))
             if len(l) > 0:
                 found_dirs.append(d)
     else:
-        log.info('empty = False')
         found_dirs = dirs
     found_nights = [os.path.basename(d) for d in found_dirs]
     trimmed_nights = [n for n in found_nights if n >= night_min and n <= night_max]
