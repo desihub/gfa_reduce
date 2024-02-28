@@ -45,8 +45,8 @@ def gfa_recent_nights(workers=8):
     nights = nights_list('20210405', '21000101', basedir=basedir)
     processed_nights = nights_list('20210405', '21000101', basedir=out_basedir, empty=False)
 
-    log.debug('Most recent night with raw GFA data: %d', max(nights))
-    log.debug('Most recent night with processed GFA data: %d', max(processed_nights))
+    log.debug('Most recent night with raw GFA data: %s', max(nights))
+    log.debug('Most recent night with processed GFA data: %s', max(processed_nights))
 
     if max(processed_nights) >= max(nights):
         log.info('No new raw GFA data to process.')
@@ -115,9 +115,7 @@ def main():
     """
     options = _options()
     if options.verbose:
-        log = get_logger(DEBUG)
-    else:
-        log = get_logger()
+        os.environ['DESI_LOGLEVEL'] = 'DEBUG'
     freeze_iers()
     gfa_recent_nights(workers=options.workers)
     gfa_daily_summary(workers=options.workers)
