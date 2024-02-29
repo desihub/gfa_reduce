@@ -1,3 +1,11 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.asterisms
+=============================
+
+Find star-like things for use in astrometry.
+"""
 import gfa_reduce.xmatch.gaia as gaia_xmatch
 import astropy.io.fits as fits
 import os

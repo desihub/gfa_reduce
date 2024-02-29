@@ -1,3 +1,11 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.splinefwhm
+==============================
+
+Measure FWHM.
+"""
 import numpy as np
 from scipy.interpolate import CubicSpline
 from desiutil.log import get_logger

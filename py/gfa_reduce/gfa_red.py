@@ -1,5 +1,11 @@
-#!/usr/bin/env python
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.gfa_red
+==================
 
+Primary driver that gets called to run the GFA reduction pipeline end to end.
+"""
 import argparse
 import os
 import gfa_reduce.io as io

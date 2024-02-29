@@ -1,3 +1,11 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.djs_photcen
+===============================
+
+Determine photometric centroids?
+"""
 import numpy as np
 from desiutil.log import get_logger
 

@@ -1,8 +1,17 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.imred.load_calibs
+============================
+
+Image calibration utilities: overscan, bias, flat, etc.
+"""
 import gfa_reduce.common as common
 import astropy.io.fits as fits
 import os
 import numpy as np
 from desiutil.log import get_logger
+
 
 def remove_overscan(image):
     sh = image.shape

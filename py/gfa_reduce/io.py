@@ -1,3 +1,11 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.io
+=============
+
+Input/output utilities.
+"""
 from gfa_reduce.image import GFA_image
 from gfa_reduce.exposure import GFA_exposure
 import gfa_reduce.common as common

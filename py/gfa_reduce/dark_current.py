@@ -1,3 +1,11 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.dark_current
+=======================
+
+Utilities related to dark current.
+"""
 import gfa_reduce.common as common
 import numpy as np
 import matplotlib.pyplot as plt

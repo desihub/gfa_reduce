@@ -1,3 +1,11 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.common
+=================
+
+Miscellaneous utilities. This module is heavily used by other modules in this package.
+"""
 import os
 import subprocess as sub
 

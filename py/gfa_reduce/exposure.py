@@ -1,3 +1,11 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.exposure
+===================
+
+Class that encapsulates a single GFA exposure consisting of multiple single-camera images.
+"""
 import gfa_reduce.common as common
 import gfa_reduce.imred.load_calibs as load_calibs
 import gfa_reduce.dark_current as dark_current

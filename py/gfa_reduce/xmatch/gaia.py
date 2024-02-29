@@ -1,3 +1,18 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.xmatch.gaia
+======================
+
+This is intended to mirror how the DESI imaging surveys access
+Gaia, namely through the HEALPix-elized full-sky catalog at::
+
+    /global/cfs/cdirs/cosmo/work/gaia/chunks-gaia-dr2-astrom
+
+Each catalog contains one Nside = 32 HEALPix pixel worth of Gaia souces.
+The HEALPix indices are determined using RA/Dec as longitude/latitude.
+The HEALPix indexing is ring-ordered.
+"""
 import gfa_reduce.common as common
 import astropy.io.fits as fits
 import healpy
@@ -10,13 +25,6 @@ import astropy.coordinates as coords
 from astropy.time import Time
 from desiutil.log import get_logger
 
-# this is intended to mirror how the DESI imaging surveys access
-# Gaia, namely through the HEALPix-elized full-sky catalog at:
-#     /global/cfs/cdirs/cosmo/work/gaia/chunks-gaia-dr2-astrom
-#
-# each catalog contains one Nside = 32 HEALPix pixel worth of Gaia souces
-# the HEALPix indices are determined using RA/Dec as longitude/latitude
-# HEALPix indexing is ring-ordered
 
 nside = 32
 

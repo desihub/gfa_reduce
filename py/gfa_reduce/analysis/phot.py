@@ -1,3 +1,11 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.phot
+========================
+
+Photometry utilities.
+"""
 import gfa_reduce.analysis.util as util
 from gfa_reduce.analysis.util import _get_area_from_ap
 from astropy.stats import mad_std

@@ -1,3 +1,13 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.dm
+======================
+
+Interface with desimeter_.
+
+.. _desimeter: https://github.com/desihub/desimeter
+"""
 import numpy as np
 from desimeter.time import mjd2lst
 from desimeter.fieldmodel import FieldModel

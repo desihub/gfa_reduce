@@ -1,3 +1,11 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.gfa_wcs
+==================
+
+WCS-related utilities.
+"""
 import astropy.io.fits as fits
 import numpy as np
 from astropy import wcs

@@ -1,3 +1,13 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.recalib_astrom
+==================================
+
+Run astrometric calibration given a catalog with the centroids and
+an initial guess (SKYRA, SKYDEC) of the field of view center.
+This is mainly going to be a wrapper for :func:`~gfa_reduce.analysis.asterisms.pattern_match`.
+"""
 from .asterisms import pattern_match, gaia_cat_for_exp
 import numpy as np
 import astropy.io.fits as fits
@@ -6,9 +16,6 @@ import time
 from astropy.table import Table
 from desiutil.log import get_logger
 
-# run astrometric calibration given a catalog with the centroids and
-# an initial guess (SKYRA, SKYDEC) of the field of view center
-# mainly going to be a wrapper for asterisms.pattern_match
 
 def recalib_astrom(cat, fname_raw, mjd=None, h=None, mp=False,
                    arcmin_max=6.0, gfa_targets=None):

@@ -1,3 +1,11 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.image
+================
+
+Class that encapsulates a single-camera image (and its metadata) drawn from a single GFA exposure.
+"""
 import gfa_reduce.common as common
 import gfa_reduce.imred.dq_mask as dq_mask
 import gfa_reduce.analysis.sky as sky
