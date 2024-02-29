@@ -1,7 +1,16 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.djs_maskinterp
+==================================
+
+Interpolate over masked regions.
+"""
 import numpy as np
 from scipy.interpolate import interp1d
 import astropy.io.fits as fits
 import time
+
 
 def maskinterp1(yval, mask):
 # omitting xval arg (assume regular grid), omitting const kw arg
@@ -19,7 +28,7 @@ def maskinterp1(yval, mask):
     ngood = np.sum(good)
     if ngood == 0:
         return yval
-    
+
     if np.sum(good) == 1:
         return yval*0 + yval[good][0]
 

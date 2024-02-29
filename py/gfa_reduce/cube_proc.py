@@ -1,3 +1,13 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.cube_proc
+====================
+
+Run gfa_reduce pipeline on multiple GFA guide cube frames.
+
+This module is more of a script and may be moved to the attic.
+"""
 import argparse
 from gfa_reduce.gfa_red import _proc
 import astropy.io.fits as fits
@@ -22,7 +32,7 @@ if __name__ == "__main__":
     parser.add_argument('--careful_sky', default=False, action='store_true',
         help='use image segmentation when deriving sky quantities')
 
-    parser.add_argument('--no_cataloging', default=False, action='store_true', 
+    parser.add_argument('--no_cataloging', default=False, action='store_true',
                         help='reduce image without cataloging sources')
 
     parser.add_argument('--no_gaia_xmatch', default=False, action='store_true',
@@ -30,7 +40,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--no_ps1_xmatch', default=False, action='store_true',
                         help='skip PS1 cross-match')
-    
+
     parser.add_argument('--write_image_outputs', default=False,
                         action='store_true',
                         help='write image-level reduction outputs')
@@ -43,7 +53,7 @@ if __name__ == "__main__":
                         action='store_true',
                         help='skip empirical rescaling of dark current')
 
-    parser.add_argument('--dont_write_invvar', default=False, 
+    parser.add_argument('--dont_write_invvar', default=False,
                         action='store_true',
                         help="don't write out invvar maps")
 
@@ -76,23 +86,23 @@ if __name__ == "__main__":
                         help="write out the initial, full list of detections")
 
     args = parser.parse_args()
-    
+
     fname_in = args.fname_in[0]
 
     assert(os.path.exists(fname_in))
-    
+
     h = fits.getheader(fname_in, extname='GUIDER')
 
     nframes = h['FRAMES']
     assert(args.indstart < nframes)
 
     nproc = args.nproc if args.nproc is not None else nframes
-    
+
     indend = min(nframes, args.indstart + nproc)
 
     skip_image_outputs = not args.write_image_outputs
     for i in np.arange(args.indstart, indend):
-        # note the hardcoding of certain arguments, especially 
+        # note the hardcoding of certain arguments, especially
         # skipping write-out of image-level outputs (saves disk space...)
         print('WORKING ON FRAME ' + str(i+1) + ' OF ' + str(nframes))
         _proc(fname_in, outdir=args.outdir,

@@ -1,3 +1,11 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.segment
+===========================
+
+Segment a 2D numpy array.
+"""
 import gfa_reduce.common as common
 import gfa_reduce.analysis.util as util
 from photutils import detect_threshold
@@ -16,9 +24,9 @@ def segmentation_map(image, extname, get_kernel=False):
         util.nominal_pixel_sidelen_arith()
 
     threshold = detect_threshold(image, snr=2.0)
-    
+
     sigma = fwhm_pix*gaussian_fwhm_to_sigma
-    kernel = Gaussian2DKernel(sigma, x_size=int(np.round(fwhm_pix)), 
+    kernel = Gaussian2DKernel(sigma, x_size=int(np.round(fwhm_pix)),
                                      y_size=int(np.round(fwhm_pix)))
     kernel.normalize()
 

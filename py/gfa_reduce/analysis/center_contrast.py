@@ -1,10 +1,18 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.center_contrast
+===================================
+
+Determine flux ratios.
+"""
 import numpy as np
 import copy
 
 def peak_flux(density_image):
     # probably going to have issues if image isn't square, don't
     # worry about that for now
-    
+
     sz = density_image.shape
     nx = sz[0]
     ny = sz[1]
@@ -22,7 +30,7 @@ def peak_flux(density_image):
 
     xmin = max(ix - half, 0)
     xmax = min(ix + half + 1, nx)
-    
+
     ymin = max(iy - half, 0)
     ymax = min(iy + half + 1, ny)
 

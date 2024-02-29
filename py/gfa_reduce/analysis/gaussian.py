@@ -1,8 +1,14 @@
-# The function fit_2dgaussian() used by GFA_reduce is removed from photutils v1.1.
-# This script is basically a copy of the orignal fit_2dgaussian() from photutils v1.0.0 with
-# minor changes to retain compatibility with newer versions of photutils (v1.1+), which is
-# still needed by other scripts in the GFA_reduce package.
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.gaussian
+============================
 
+The function ``fit_2dgaussian()`` used by GFA_reduce is removed from photutils v1.1.
+This script is basically a copy of the orignal ``fit_2dgaussian()`` from photutils v1.0.0 with
+minor changes to retain compatibility with newer versions of photutils (v1.1+), which is
+still needed by other scripts in the GFA_reduce package.
+"""
 import warnings
 from astropy.modeling import Fittable2DModel, Parameter
 from astropy.modeling.fitting import LevMarLSQFitter
@@ -10,6 +16,7 @@ from astropy.modeling.models import Const2D, Gaussian2D
 from astropy.utils.exceptions import AstropyUserWarning
 import numpy as np
 from photutils.morphology import data_properties
+
 
 def fit_2dgaussian(data, error=None, mask=None):
     """
@@ -48,7 +55,7 @@ def fit_2dgaussian(data, error=None, mask=None):
         warnings.warn('Input data contains non-finite values (e.g., NaN or '
                       'infs) that were automatically masked.',
                       AstropyUserWarning)
-    
+
     if error is not None:
         error = np.ma.masked_invalid(error)
         if data.shape != error.shape:
@@ -61,7 +68,7 @@ def fit_2dgaussian(data, error=None, mask=None):
     if np.ma.count(data) < 7:
         raise ValueError('Input data must have a least 7 unmasked values to '
                          'fit a 2D Gaussian plus a constant.')
-    
+
     # assign zero weight to masked pixels
     if data.mask is not np.ma.nomask:
         weights[data.mask] = 0.
@@ -69,7 +76,7 @@ def fit_2dgaussian(data, error=None, mask=None):
     mask = data.mask
     data.fill_value = 0.
     data = data.filled()
-    
+
     # Subtract the minimum of the data as a rough background estimate.
     # This will also make the data values positive, preventing issues with
     # the moment estimation in data_properties. Moments from negative data
@@ -78,14 +85,14 @@ def fit_2dgaussian(data, error=None, mask=None):
 
     init_const = 0.  # subtracted data minimum above
     init_amplitude = np.ptp(data)
-    
+
     g_init = GaussianConst2D(constant=init_const, amplitude=init_amplitude,
                              x_mean=props.xcentroid,
                              y_mean=props.ycentroid,
                              x_stddev=props.semimajor_sigma.value,
                              y_stddev=props.semiminor_sigma.value,
                              theta=props.orientation.value)
-    
+
     # original code from photutil.centroids.gaussian.py 1.0.0. Cannot be used in
     # its original form due to API changes in photutils v1.1
     #g_init = GaussianConst2D(constant=init_const, amplitude=init_amplitude,

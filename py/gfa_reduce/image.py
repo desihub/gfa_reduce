@@ -1,8 +1,16 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.image
+================
+
+Class that encapsulates a single-camera image (and its metadata) drawn from a single GFA exposure.
+"""
 import gfa_reduce.common as common
 import gfa_reduce.imred.dq_mask as dq_mask
 import gfa_reduce.analysis.sky as sky
 import gfa_reduce.analysis.segment as segment
-import gfa_reduce.analysis.phot as phot # may not be needed anymore?
+# import gfa_reduce.analysis.phot as phot # may not be needed anymore?
 from gfa_reduce.gfa_wcs import nominal_tan_wcs
 import numpy as np
 import astropy.io.fits as fits
@@ -15,9 +23,11 @@ from gfa_reduce.analysis.djs_photcen import djs_photcen
 import os
 from gfa_reduce.analysis.radprof import _atv_radplotf
 from gfa_reduce.analysis.splinefwhm import _atv_splinefwhm
+from desiutil.log import get_logger
 
 class PSF:
     def __init__(self, cube, im_header, cube_index):
+        self.log = get_logger()
         self.psf_image = np.median(cube, 2) # seems to work even for nstars = 1
 
         self.cube_index = cube_index
@@ -41,7 +51,7 @@ class PSF:
 
         self.psf_image /= np.max(self.psf_image)
 
-        
+
         self.extname = im_header['EXTNAME']
         self.nstars = cube.shape[2]
         self.cube = cube # maybe get rid of this eventually to save memory
@@ -89,7 +99,7 @@ class PSF:
                                                      y_centroid=self.ycen_flux_weighted)
 
         self.fiber_fracflux_bgs = bgs_fiber_flux/psf_tot_flux
-        
+
         if (np.abs(self.xcen_flux_weighted - (self.sidelen // 2)) > 1) or (np.abs(self.ycen_flux_weighted - (self.sidelen // 2)) > 1):
             self.xcen_flux_weighted = float(self.sidelen // 2)
             self.ycen_flux_weighted = float(self.sidelen // 2)
@@ -114,7 +124,7 @@ class PSF:
         self.psf_total_flux = np.float32(np.sum(self.psf_image))
 
     def psf_image_header(self, hdu):
-        
+
          hdu.header['EXTNAME'] = self.extname
          hdu.header['PETALLOC'] = common.gfa_extname_to_gfa_number(self.extname)
          hdu.header['NSTARS'] = self.nstars
@@ -136,7 +146,7 @@ class PSF:
          hdu = f(self.psf_image)
 
          self.psf_image_header(hdu)
-         
+
          return hdu
 
     def cube_to_hdu(self, primary=False):
@@ -146,12 +156,13 @@ class PSF:
          self.psf_image_header(hdu)
 
          return hdu
-     
+
     def flux_weighted_centroid(self):
         x_start = y_start = self.sidelen // 2
 
-        print('djs_photcen using cbox = ', self.cbox, ' x_start = ', x_start, ' y_start = ', y_start)
-        
+        self.log.info('djs_photcen using cbox = %0.4f x_start = %d y_start = %d',
+                      self.cbox, x_start, y_start)
+
         xcen, ycen, q = djs_photcen(x_start, y_start, self.psf_image,
                                     cbox=self.cbox,
                                     cmaxiter=10, cmaxshift=0.0,
@@ -191,7 +202,7 @@ class PSF:
         smth = ndimage.convolve(self.psf_image, kern, mode='constant')
 
         self.smoothed_psf_image_bgs = smth
-        
+
 
 class Overscan:
     """Object to encapsulate single-camera worth of overscan and prescan"""
@@ -234,7 +245,7 @@ class Overscan:
 
     def count_badpixels(self, thresh=10000, prescan=False):
         amps = common.valid_amps_list()
-        
+
         if prescan:
             return dict([(amp, int(np.sum(self.prescan_cutouts[amp] > thresh))) for amp in amps])
         else:
@@ -252,6 +263,7 @@ class GFA_image:
     """Single GFA image from one GFA exposure"""
 
     def __init__(self, image, header, cube_index=None, store_detmap=False, coadd_index_range=None):
+        self.log = get_logger()
         if cube_index is None:
             self.image = image.astype('float32')
             self.nframe = 1
@@ -273,11 +285,11 @@ class GFA_image:
         self.store_detmap = store_detmap
         self.detmap = None
         self.full_detlist = None
-        
+
         par = common.gfa_misc_params()
         # important that this saturation threshold be done on truly raw image..
         self.satmask = (self.image > par['sat_thresh_adu']).astype('byte')
-        
+
         self.cube_index = cube_index
         self.header = header
         self.extname = self.header['EXTNAME'].replace(' ', '')
@@ -331,14 +343,14 @@ class GFA_image:
         # used for dark removal was a guess (1) or is thought to
         # be correct (0)
         self.t_c_for_dark_is_guess = None
-        
+
         # record exposure time used for dark current removal
         self.time_s_for_dark = None
 
         self.psf = None
 
         self.max_cbox = 31
-        
+
     def create_dq_mask(self, dark_image):
         if self.bitmask is not None:
             return
@@ -363,7 +375,7 @@ class GFA_image:
             self.bitmask = ((flatfield < thresh)*(2**d['FLATBAD'])).astype('byte')
         else:
             self.bitmask += ((flatfield < thresh)*(2**d['FLATBAD'])).astype('byte')
-        
+
     def calc_variance_e_squared(self):
         # at this stage the image ought to have been bias subtracted
         # but not flatfielded or dark subtracted
@@ -448,7 +460,7 @@ class GFA_image:
 
     def are_pixels_calibrated(self, flatfielding_on=True):
         if flatfielding_on:
-            result = (self.bias_subtracted and self.dark_subtracted and 
+            result = (self.bias_subtracted and self.dark_subtracted and
                       self.flatfielded)
         else:
             result = (self.bias_subtracted and self.dark_subtracted)
@@ -473,12 +485,12 @@ class GFA_image:
             for amp in common.valid_amps_list():
                 bdy = common.amp_bdy_coords(amp)
                 self.sky_level_adu_per_amp[amp] = np.median(self.image[bdy['y_l']:bdy['y_u'], bdy['x_l']:bdy['x_u']])
-                
+
 
         return self.sky_level_adu
 
     def compute_segmap(self):
-        print('Attempting to compute segmentation map for ' + self.extname)
+        self.log.info('Attempting to compute segmentation map for %s', self.extname)
 
         segmap = segment.segmentation_map(self.image, self.extname)
         return segmap
@@ -512,16 +524,16 @@ class GFA_image:
                                                     flatfielding_on=flatfielding_on)
 
         acttime = self.time_s_for_dark
-        
-        sky_mag = sky.adu_to_surface_brightness(sky_adu_per_pixel, 
+
+        sky_mag = sky.adu_to_surface_brightness(sky_adu_per_pixel,
                                                 acttime, self.extname)
 
         if self.sky_level_adu_per_amp is not None:
             amps = common.valid_amps_list()
             self.sky_mag_per_amp = [sky.adu_to_surface_brightness(self.sky_level_adu_per_amp[amp], acttime, self.extname) for amp in amps]
 
-        print(self.extname + ' sky mag per square asec AB : ' +  
-              '{:.3f}'.format(sky_mag))
+        self.log.info(self.extname + ' sky mag per square asec AB : ' +
+                      '{:.3f}'.format(sky_mag))
 
         self.sky_mag = sky_mag
 
@@ -533,14 +545,14 @@ class GFA_image:
     def sky_mag_upper(self):
         # only upper 8 rows of image -- see DESI-5334
         self.sky_level_adu_upper = np.median(self.image[1024:1032, 0:2047])
-        self.sky_mag_upper = sky.adu_to_surface_brightness(self.sky_level_adu_upper, 
+        self.sky_mag_upper = sky.adu_to_surface_brightness(self.sky_level_adu_upper,
                                                            self.time_s_for_dark, self.extname)
 
     def catalog_add_radec(self, catalog):
         # use wcs attribute to convert from pixel to world coordinates
         # be careful about 1-indexed versus 0-indexed convention
         # also be careful about any swapping of x and y pixel coordinates
-        
+
         ra, dec = self.wcs.all_pix2world(catalog['xcentroid'],
                                          catalog['ycentroid'], 0)
 
@@ -566,11 +578,11 @@ class GFA_image:
             self.detmap = detmap
 
         del detmap
-        
+
         n_sources = (len(tab) if tab is not None else 0)
 
-        print('Found ' + str(n_sources) + ' sources in ' +
-              self.extname + ' image')
+        self.log.info('Found ' + str(n_sources) + ' sources in ' +
+                      self.extname + ' image')
 
         if tab is None:
             return tab
@@ -579,7 +591,7 @@ class GFA_image:
 
         mjd_obs = self.try_retrieve_meta_keyword('MJD-OBS')
         if mjd_obs is None:
-            print('could not find MJD-OBS header keyword !!!')
+            self.log.warning('could not find MJD-OBS header keyword !!!')
         else:
             tab['mjd_obs'] = mjd_obs
 
@@ -596,7 +608,7 @@ class GFA_image:
         telra = self.header['SKYRA']
         teldec = self.header['SKYDEC']
 
-        print('Attempting to initialize WCS guess for ' + self.extname)
+        self.log.info('Attempting to initialize WCS guess for %s', self.extname)
         self.wcs = nominal_tan_wcs(telra, teldec, self.extname)
 
     def remove_overscan(self):
@@ -642,7 +654,7 @@ class GFA_image:
 
         # because guider cube metadata has evolved over time, won't
         # always be guaranteed to get e.g., GCCDTEMP at all
-        
+
         # first look in the image header (could be dangerous for EXPTIME
         # in the case of guider cubes)
 
@@ -657,16 +669,16 @@ class GFA_image:
         elif (self.bintable_row is not None) and bintable_has_keyword:
             return self.bintable_row[keyword]
         else:
-            print('could not find ' + keyword + ' !!')
+            self.log.warning('could not find ' + keyword + ' !!')
             return placeholder
-            
-        
+
+
     def extract_psf_cutouts(self, __catalog, sidelen=51):
 
         # handle case of entire exposure with no retained sources
         if __catalog is None:
             return
-        
+
         # sidelen should be an integer...
         assert(np.round(sidelen) == sidelen)
 
@@ -676,9 +688,9 @@ class GFA_image:
         _catalog = __catalog[__catalog['camera'] == self.extname]
         if len(_catalog) == 0:
             return None
-        
+
         keep = util.use_for_fwhm_meas(_catalog, bad_amps=bad_amps, no_sig_major_cut=True) & (_catalog['min_edge_dist_pix'] > (half + 0.5)) & (_catalog['aper_sum_bkgsub_3'] > 0)
-        
+
         if np.sum(keep) == 0:
             return None
 
@@ -711,28 +723,28 @@ class GFA_image:
             bg = np.median(cutout[bgmask])
 
             cutout -= bg
-            
+
             cutout = cutout/catalog['aper_sum_bkgsub_3'][i]
 
             cutouts.append(cutout)
 
         ncutouts = len(cutouts)
-        
+
         if ncutouts == 0:
             return None
 
         cube = np.zeros((sidelen, sidelen, ncutouts))
         for i, cutout in enumerate(cutouts):
             cube[:, :, i] = cutout
-        
+
         return cube
 
     def create_psf(self, catalog, sidelen=51):
         cube = self.extract_psf_cutouts(catalog, sidelen=sidelen)
-        print('computing PSF for ' + self.extname)
+        self.log.info('computing PSF for %s', self.extname)
         if cube is None:
             self.psf = None
-            print("WARNING: did not find any PSF 'stars' for " + self.extname)
+            self.log.warning("Did not find any PSF 'stars' for %s", self.extname)
         else:
             self.psf = PSF(cube, self.header, self.cube_index)
 
@@ -751,7 +763,7 @@ class GFA_image:
         # require GFA _3 flux > 0
         # require something about minimum edge distance
         # cut on dq_flags
-        
+
         good = ps1_matched_catalog['use_for_zp'] & (ps1_matched_catalog['camera'] == self.extname)
 
         # if I instead required > 1 star for zeropoint
@@ -771,5 +783,5 @@ class GFA_image:
         # would be good to return metrics
         # regarding how many/which sources were used for determinining the zeropoint
         # what their mag range was, maybe even how well the slope of m_inst vs m_ps1 matches with unity
-        
+
         return zp

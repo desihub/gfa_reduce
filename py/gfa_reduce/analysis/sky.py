@@ -1,6 +1,15 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.sky
+=======================
+
+Convert ADU to surface brightness.
+"""
 import gfa_reduce.common as common
 import numpy as np
 import gfa_reduce.analysis.util as util
+
 
 def adu_to_surface_brightness(sky_adu_1pixel, acttime, extname):
     """
@@ -25,4 +34,4 @@ def adu_to_surface_brightness(sky_adu_1pixel, acttime, extname):
     zp_adu_per_s = util.median_zenith_camera_zeropoint(extname)
 
     return (zp_adu_per_s - 2.5*np.log10(sky_adu_per_sec_sq_asec))
-    
+

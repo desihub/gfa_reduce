@@ -1,4 +1,13 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.radprof
+===========================
+
+Radial profiling.
+"""
 import numpy as np
+
 
 def _atv_radplotf(img, x, y):
 
@@ -55,5 +64,5 @@ def _atv_radplotf(img, x, y):
             profile[i] = np.sum(img[mask])/_np
         else:
             radii[i] = rout
-        
+
     return radii, profile

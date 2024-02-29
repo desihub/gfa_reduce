@@ -1,10 +1,19 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.basic_catalog_stats
+=======================================
+
+Determine image summary statistics.
+"""
 import gfa_reduce.analysis.util as util
 import numpy as np
 
-# do a meta-analysis of the per-object FWHM values, 
+
+# do a meta-analysis of the per-object FWHM values,
 # presumably restricting to relative high s/n sources
 # if no good sources are available, then need to return some dummy
-# value 
+# value
 def overall_image_fwhm(tab, bad_amps=None, snr_thresh=20):
     # remove bad/dummy FWHM values
     # remove sources that are near image boundaries
@@ -12,7 +21,7 @@ def overall_image_fwhm(tab, bad_amps=None, snr_thresh=20):
     # to leave this as an optimization for the future
 
     assert(len(np.unique(tab['camera'])) == 1)
-        
+
     good = util.use_for_fwhm_meas(tab, bad_amps=bad_amps, snr_thresh=snr_thresh)
 
     # check for case of not enough sources
@@ -31,7 +40,7 @@ def overall_image_fwhm(tab, bad_amps=None, snr_thresh=20):
 
     fwhm_pix = np.sqrt(fwhm_major_pix*fwhm_minor_pix)
 
-    # this is a temporary HACK -- should really take into account 
+    # this is a temporary HACK -- should really take into account
     # the PA and directionality of the platescale when doing this
 
     asec_per_pix = util.nominal_pixel_sidelen_arith()

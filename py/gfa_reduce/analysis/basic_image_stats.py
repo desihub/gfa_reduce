@@ -1,7 +1,16 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.basic_image_stats
+=====================================
+
+Determine low-level image statistics.
+"""
 import gfa_reduce.analysis.util as util
 import numpy as np
 from astropy.stats import mad_std
 from astropy.table import Table, hstack
+
 
 # for now compute these stats on the *raw* image, could consider
 # switching to the reduced image, or doing both in the future
@@ -64,7 +73,7 @@ def compute_all_stats(image, skip_quadrants=False, extname=None):
         sig_robust = [compute_mad_std(image, quadrant=q)]
         sig = [compute_std(image, quadrant=q)]
 
-        colnames = ['median', 'mean', 'n_non_finite', 'max', 'min', 
+        colnames = ['median', 'mean', 'n_non_finite', 'max', 'min',
                     'sig_robust', 'sig']
 
         if q is not None:

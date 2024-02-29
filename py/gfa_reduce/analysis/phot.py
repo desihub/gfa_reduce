@@ -1,3 +1,11 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.analysis.phot
+========================
+
+Photometry utilities.
+"""
 import gfa_reduce.analysis.util as util
 from gfa_reduce.analysis.util import _get_area_from_ap
 from astropy.stats import mad_std
@@ -14,10 +22,12 @@ from photutils import CircularAperture, CircularAnnulus, EllipticalAperture
 import gfa_reduce.common as common
 import gfa_reduce.analysis.djs_maskinterp as djs_maskinterp
 from gfa_reduce.analysis.djs_photcen import _loop_djs_photcen
-import photutils
+# import photutils
 import copy
 import os
 import astropy.io.fits as fits
+from desiutil.log import get_logger
+
 
 def slices_to_table(slices, detsn, extname):
     nslc = len(slices)
@@ -50,7 +60,7 @@ def detmap_centroids(tab, detmap, max_cbox=31):
 
     # tab should be a table of detections like that output by the
     # slices_to_table function
-    
+
     # construct lists of starting guess (x, y) pixel coordinates
     # and cbox sizes
 
@@ -84,11 +94,11 @@ def detection_map(im, fwhm):
     smth[1031, :] = 0.0
     smth[:, 0] = 0.0
     smth[:, 2047] = 0.0
-    
+
     sig_smth = mad_std(smth)
 
     detsn = (smth-np.median(smth))/sig_smth
-    
+
     return detsn
 
 def detect_sources(detsn, thresh):
@@ -117,13 +127,13 @@ def aper_rad_pix(extname):
     return rad_pix
 
 def do_aper_phot(data, catalog, extname, ivar_adu, sig_adu=None):
-    # catalog should be the catalog with refined centroids 
+    # catalog should be the catalog with refined centroids
     # for **one GFA camera**
-
+    log = get_logger()
     if sig_adu is None:
         sig_adu = aper_phot_unc_map(ivar_adu)
 
-    print('Attempting to do aperture photometry')
+    log.info('Attempting to do aperture photometry')
     positions = list(zip(catalog['xcentroid'], catalog['ycentroid']))
 
     radii = aper_rad_pix(extname)
@@ -156,7 +166,7 @@ def do_aper_phot(data, catalog, extname, ivar_adu, sig_adu=None):
         bkg_median.append(median_sigclip)
 
     bkg_median = np.array(bkg_median)
-    phot = aperture_photometry(data, apertures, 
+    phot = aperture_photometry(data, apertures,
                                error=sig_adu)
 
     for i, aperture in enumerate(apertures):
@@ -168,7 +178,7 @@ def do_aper_phot(data, catalog, extname, ivar_adu, sig_adu=None):
 
     ###
     del phot
-    phot = aperture_photometry(data, apertures_ell, 
+    phot = aperture_photometry(data, apertures_ell,
                                error=sig_adu)
     for i, aperture in enumerate(apertures_ell):
         aper_bkg_tot = bkg_median*_get_area_from_ap(aperture)
@@ -180,7 +190,7 @@ def do_aper_phot(data, catalog, extname, ivar_adu, sig_adu=None):
 
     ###
     del phot
-    phot = aperture_photometry(data, aper_fib, 
+    phot = aperture_photometry(data, aper_fib,
                                error=sig_adu)
 
     aper_bkg_tot = bkg_median*_get_area_from_ap(aper_fib)
@@ -205,12 +215,12 @@ def get_nominal_fwhm_pix(extname):
 def refine_centroids(tab, image, bitmask, ivar_adu, sig_adu=None,
                      skip_2dg=False):
     # input table tab gets augmented with additional columns
-
-    print('Attempting to refine initial centroids')
+    log = get_logger()
+    log.info('Attempting to refine initial centroids')
 
     # this is for field acquisition mode
     if skip_2dg:
-        print('Skipping 2D Gaussian source fitting')
+        log.info('Skipping 2D Gaussian source fitting')
         tab['xcentroid'] = tab['xcen_detmap_fw']
         tab['ycentroid'] = tab['ycen_detmap_fw']
         tab['sig_major_pix'] = 5.0 # HACK !!!
@@ -266,7 +276,7 @@ def refine_centroids(tab, image, bitmask, ivar_adu, sig_adu=None,
 
         _xcentroid = gfit.x_mean.value
         _ycentroid = gfit.y_mean.value
-        
+
         ph, pw = cutout.shape
         px, py = np.meshgrid(np.arange(pw), np.arange(ph))
 
@@ -326,13 +336,13 @@ def add_metadata_columns(tab, bitmask):
 
 def get_source_list(image, bitmask, extname, ivar_adu, max_cbox=31,
                     run_aper_phot=True, thresh=5, skip_2dg=False):
-
-    print('Attempting to catalog sources in ' + extname + ' image')
+    log = get_logger()
+    log.info('Attempting to catalog sources in %s image', extname)
 
     assert((thresh >= 4) and (thresh <= 100))
 
     par = common.mask_bit_dict()
-    
+
     image = djs_maskinterp.average_bilinear(image, (np.bitwise_and(bitmask, 1) != 0))
 
     nominal_fwhm_pix = get_nominal_fwhm_pix(extname)
@@ -359,7 +369,7 @@ def get_source_list(image, bitmask, extname, ivar_adu, max_cbox=31,
     # rejecting (sig_major_pix <= 1) sources when computing
     # overall FWHM and recalibrating the astrometry
     ### tab = tab[tab['sig_major_pix'] > 1.0] # HACK !!!!!
-    
+
     add_metadata_columns(tab, bitmask)
 
     tab = tab[(tab['min_edge_dist_pix'] > -5)]
@@ -382,11 +392,11 @@ def pmgstars_forced_phot(xcentroid, ycentroid, image, elg=False,
 
     assert(len(xcentroid) > 0)
     assert(len(ycentroid) > 0)
-
+    log = get_logger()
     # create the apertures
     # get the fluxes
 
-    print('Attempting to do forced aperture photometry')
+    log.info('Attempting to do forced aperture photometry')
 
     # shouldn't happen...
     assert(not (elg and bgs))
