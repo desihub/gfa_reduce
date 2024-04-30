@@ -6,8 +6,8 @@ Change Log
 tags have been created to be consistent with ``X.Y.Z`` conventions, and the
 corresponding old tag is listed with the date in the titles below.
 
-1.0.0 (2024-02-xx, unreleased)
-------------------------------
+1.0.0 (2024-04-30)
+------------------
 
 First version for NERSC-only GFA processing, with :command:`desiInstall` support (PR `#20`_).
 
