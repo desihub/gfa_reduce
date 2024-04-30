@@ -273,9 +273,9 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
     log.info('Done')
 
 
-def _latest_summary_file(outdir='.'):
+def _latest_summary_file(outdir='.', phase='SV3'):
 
-    files = glob.glob(outdir + '/offline_matched_coadd_ccds_SV3-thru_????????.fits')
+    files = glob.glob(outdir + f'/offline_matched_coadd_ccds_{phase}-thru_????????.fits')
 
     files = np.array([os.path.splitext(f)[0] for f in files])
 
@@ -323,7 +323,7 @@ def _append_many_nights(night_min='20201214', night_max='99999999',
         return
 
     # Find the most recent daily summary file in the output dir
-    latest_summary_file, latest_night = _latest_summary_file(outdir=outdir)
+    latest_summary_file, latest_night = _latest_summary_file(outdir=outdir, phase=phase)
     log.info('The latest daily summary file includes data through %s.', latest_night)
 
     next_obsnight = _next_obsnight(night=latest_night)
