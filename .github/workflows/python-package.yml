@@ -1,0 +1,160 @@
+# Workflow is based on the Astropy GitHub actions workflow, ci_workflows.yml
+name: CI
+
+on:
+    push:
+        branches:
+            - '*'
+        tags:
+            - '*'
+    pull_request:
+
+jobs:
+    tests:
+        name: Unit tests
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: true
+            matrix:
+                os: [ubuntu-latest]
+                python-version: ['3.9', '3.10']  #, '3.11'] There are still issues with Numpy <1.23 and 3.11.
+                numpy-version: ['<1.23']
+                astropy-version: ['<6.0', '<7.0']
+                desimeter-version: ['0.7.0']
+                desiutil-version: ['3.4.2']
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+              with:
+                fetch-depth: 0
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v4
+              with:
+                python-version: ${{ matrix.python-version }}
+            - name: Install Python dependencies
+              run: |
+                python -m pip install --upgrade pip setuptools wheel
+                python -m pip install "git+https://github.com/desihub/desiutil.git@${{ matrix.desiutil-version }}#egg=desiutil"
+                python -m pip install "git+https://github.com/desihub/desimeter.git@${{ matrix.desimeter-version }}#egg=desimeter"
+                python -m pip install --upgrade "numpy${{ matrix.numpy-version }}"
+                python -m pip install --upgrade "astropy${{ matrix.astropy-version }}"
+                python -m pip install --editable .[test]
+            - name: Run the test
+              run: pytest
+
+    coverage:
+        name: Test coverage
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest]
+                python-version: ['3.10']
+                numpy-version: ['<1.23']
+                astropy-version: ['<6.0']
+                desimeter-version: ['0.7.0']
+                desiutil-version: ['3.4.2']
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+              with:
+                fetch-depth: 0
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v4
+              with:
+                python-version: ${{ matrix.python-version }}
+            - name: Install Python dependencies
+              run: |
+                python -m pip install --upgrade pip setuptools wheel
+                python -m pip install "git+https://github.com/desihub/desiutil.git@${{ matrix.desiutil-version }}#egg=desiutil"
+                python -m pip install "git+https://github.com/desihub/desimeter.git@${{ matrix.desimeter-version }}#egg=desimeter"
+                python -m pip install --upgrade "numpy${{ matrix.numpy-version }}"
+                python -m pip install --upgrade "astropy${{ matrix.astropy-version }}"
+                python -m pip install --editable .[coverage]
+            - name: Run the test with coverage
+              run: pytest --cov
+            - name: Coveralls
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+              run: coveralls
+
+    docs:
+        name: Doc test
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest]
+                python-version: ['3.10']
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+              with:
+                fetch-depth: 0
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v4
+              with:
+                python-version: ${{ matrix.python-version }}
+            - name: Install Python dependencies
+              run: python -m pip install --upgrade pip setuptools wheel Sphinx sphinx-rtd-theme
+            - name: Test the documentation
+              run: sphinx-build -W --keep-going -b html doc doc/_build/html
+
+    api:
+        name: API doc completeness test
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest]
+                python-version: ['3.10']
+                desiutil-version: ['3.4.2']
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+              with:
+                  fetch-depth: 0
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v4
+              with:
+                  python-version: ${{ matrix.python-version }}
+            - name: Install Python dependencies
+              run: |
+                python -m pip install --upgrade pip setuptools wheel
+                python -m pip install "git+https://github.com/desihub/desiutil.git@${{ matrix.desiutil-version }}#egg=desiutil"
+            - name: Generate api.rst
+              run: |
+                desi_api_file --api ./api.rst gfa_reduce
+                cat ./api.rst | perl -ne 'BEGIN {$m=0} if (/\.attic/) {$m=1} elsif ($m==1) {$m=2} elsif ($m==2) {$m=3} else {$m=0;print}' > ./api_no_attic.rst
+            - name: Compare generated api.rst to checked-in version
+              run: diff --ignore-space-change --ignore-blank-lines ./api_no_attic.rst ./doc/api.rst
+
+    style:
+        name: Style check
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest]
+                python-version: ['3.10']
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+              with:
+                fetch-depth: 0
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v4
+              with:
+                python-version: ${{ matrix.python-version }}
+            - name: Install Python dependencies
+              run: python -m pip install --upgrade pip setuptools wheel pycodestyle
+            - name: Test the style; failures are allowed
+              # This is equivalent to an allowed falure.
+              continue-on-error: true
+              run: pycodestyle --count py/gfa_reduce

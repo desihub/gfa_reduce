@@ -1,19 +1,26 @@
-#!/usr/bin/env python
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.scripts.concat_ccds
+==============================
 
-import astropy.io.fits as fits
-from astropy.table import Table, vstack, hstack
-import glob
-import numpy as np
-import os
+Produce a summary file of GFA processed images.
+"""
 import argparse
-from multiprocessing import Pool
 import datetime
+import glob
+import os
+from multiprocessing import Pool
+import numpy as np
+import astropy.io.fits as fits
+from astropy.table import Table, vstack
+
+from desiutil.log import get_logger, DEBUG
+
 
 def _get_default_basedir(acq=False):
-    basedir = os.environ['GFA_REDUX_BASE'] + '_' + \
-              ('matched' if not acq else 'acq')
+    return os.environ['GFA_REDUX_BASE'] + '_' + ('matched' if not acq else 'acq')
 
-    return basedir
 
 def cube_index_median(tab, extra_cuts=False, matched_coadd=True):
 
@@ -30,7 +37,7 @@ def cube_index_median(tab, extra_cuts=False, matched_coadd=True):
         bad = np.logical_or(bad, tab['N_SOURCES_FOR_PSF'] < 3)
 
     tab = tab[np.logical_not(bad)]
-    
+
     _id = np.array([str(tab[i]['EXPID']).zfill(8) + str(tab[i]['CUBE_INDEX']).zfill(5) + tab[i]['EXTNAME'] for i in range(len(tab))])
 
     sind = np.argsort(_id)
@@ -48,7 +55,7 @@ def cube_index_median(tab, extra_cuts=False, matched_coadd=True):
 
     if matched_coadd:
         cols_to_median += ['FIBERFAC', 'FIBERFAC_ELG', 'FIBERFAC_BGS']
-    
+
     rows = []
     for i, ind in enumerate(ind_u):
         ind_lower = ind
@@ -77,34 +84,66 @@ def cube_index_median(tab, extra_cuts=False, matched_coadd=True):
 
     return result
 
-def _nights_list(night_min, night_max, basedir=None, acq=False):
 
+def nights_list(night_min, night_max, basedir=None, acq=False, empty=False):
+    """Find a set of nights for processing.
+
+    The original code involved redundant conversions to :class:`np.array`,
+    so it has been completely rewritten. In addition, it is sometimes
+    necessary to include empty directories left over from previous rounds
+    of processing.
+
+    Parameters
+    ----------
+    night_min : :class:`str`
+        The earliest night to search for, in YYYYMMDD format.
+    night_max : :class:`str`
+        The last night to search for, in YYYYMMDD format.
+    basedir : :class:`str`, optional
+        The directory containing night directories.
+    acq : :class:`bool`, optional
+        If ``True`` set the ``acq`` suffix when searching for `basedir`.
+    empty : :class:`bool`, optional
+        If ``True``, *remove* empty night directories from the list
+        so that they can be reprocessed.
+
+    Returns
+    -------
+    :class:`list`
+        The list of nights found.
+    """
+    log = get_logger()
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
-
+    log.debug('basedir = %s', basedir)
     dirs = glob.glob(basedir + '/????????')
+    if empty:
+        found_dirs = list()
+        for d in dirs:
+            l = os.listdir(d)
+            log.debug('%s = %s', d, str(l))
+            if len(l) > 0:
+                found_dirs.append(d)
+    else:
+        found_dirs = dirs
+    found_nights = [os.path.basename(d) for d in found_dirs]
+    trimmed_nights = [n for n in found_nights if n >= night_min and n <= night_max]
+    return sorted(trimmed_nights)
 
-    _dirs = np.array([os.path.split(d)[-1] for d in dirs])
-
-    dirs = np.array(dirs)
-    dirs = dirs[(_dirs >= night_min) & (_dirs <= night_max)]
-
-    nights = [os.path.split(d)[-1] for d in dirs]
-
-    nights.sort()
-    return nights
 
 def _read_one_ccds_table(fname):
-    print('READING : ' + fname)
+    log = get_logger()
+    log.debug('READING : %s', fname)
     tab = fits.getdata(fname)
     tab = Table(tab)
     tab['fwhm_asec'] = tab['psf_fwhm_asec']
 
     return tab
 
+
 def _concat(night='20201214', basedir=None, acq=False, user_basedir=None,
             workers=1):
-
+    log = get_logger()
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
 
@@ -123,9 +162,9 @@ def _concat(night='20201214', basedir=None, acq=False, user_basedir=None,
     if len(flist) == 0:
         return None
 
-    print('initializing pool with ' + str(workers) + ' workers')
+    log.info('Initializing pool with %d workers.', workers)
     p = Pool(workers)
-    
+
     tables = p.map(_read_one_ccds_table, flist)
 
     p.close()
@@ -142,29 +181,29 @@ def _concat(night='20201214', basedir=None, acq=False, user_basedir=None,
 
     return result
 
+
 def _concat_many_nights(night_min='20201214', night_max='99999999',
                         basedir=None, acq=False, user_basedir=None, workers=1):
-
+    log = get_logger()
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
 
-    print('reading in _ccds tables...')
+    log.info('Reading in _ccds tables...')
 
-    nights = _nights_list(night_min, night_max, basedir=basedir, acq=acq)
+    nights = nights_list(night_min, night_max, basedir=basedir, acq=acq)
 
     if user_basedir is not None:
-        nights_user = _nights_list(night_min, night_max, basedir=user_basedir,
+        nights_user = nights_list(night_min, night_max, basedir=user_basedir,
                                    acq=acq)
         nights = list(set(nights_user + nights))
         nights.sort()
 
-    print('first night is : ' + str(np.min(np.array(nights, dtype=int))))
-    print('last night is : ' + str(np.max(np.array(nights, dtype=int))))
+    log.info('First night is : %d', np.min(np.array(nights, dtype=int)))
+    log.info('Last night is : %d', np.max(np.array(nights, dtype=int)))
 
     tables = []
     for i, night in enumerate(nights):
-        print('Working on night ' + night + ' (' + str(i+1) + ' of ' +
-              str(len(nights)) + ')')
+        log.info('Working on night %s (%d of %d).', night, i+1, len(nights))
         table = _concat(night=night, basedir=basedir, acq=acq,
                         user_basedir=user_basedir, workers=workers)
         if table is None:
@@ -180,20 +219,21 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
 
     result = result[sind]
 
-    print('assembling per-frame median extension with minimal quality cuts...')
+    log.info('Assembling per-frame median extension with minimal quality cuts...')
     med = cube_index_median(result, matched_coadd=(not acq))
-    print('assembling per-frame median extension with additional quality cuts...')
+    log.info('Assembling per-frame median extension with additional quality cuts...')
 
     _med = cube_index_median(result, extra_cuts=True, matched_coadd=(not acq))
-    
+
     return result, med, _med
+
 
 def _write_many_nights(night_min='20201214', night_max='99999999',
                        basedir=None, acq=False, phase='SV1',
                        outdir='.', user_basedir=None, workers=1):
-
+    log = get_logger()
     if not os.path.exists(outdir):
-        print('output directory does not exists ... quitting')
+        log.warning('Output directory does not exist ... quitting.')
         return
 
     if basedir is None:
@@ -207,8 +247,8 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
 
     cube_index = 0 if acq else -1
     if (np.sum(result['CUBE_INDEX'] != cube_index) > 0) or (np.sum(med['CUBE_INDEX'] != cube_index) > 0) or (np.sum(_med['CUBE_INDEX'] != cube_index) > 0):
-        print('WARNING: wrong CUBE_INDEX detected')
-    
+        log.warning('wrong CUBE_INDEX detected')
+
     hdul = fits.HDUList(hdus=[fits.PrimaryHDU(),
                               fits.BinTableHDU(data=result),
                               fits.BinTableHDU(data=med),
@@ -222,29 +262,31 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
     outname = os.path.join(outdir, outname)
 
     if os.path.exists(outname):
-        print('summary file already exists !!!')
+        log.warning('Summary file already exists!')
         return
 
-    print('attempting to write multi-extension FITS output to ' + outname)
+    log.info('Attempting to write multi-extension FITS output to ' + outname)
     hdul.writeto(outname)
-    os.system('chgrp desi ' + outname)
-    os.system('chmod ug-w ' + outname)
-    os.system('chmod a+r ' + outname)
-    print('done')
+    # os.system('chgrp desi ' + outname)
+    # os.system('chmod ug-w ' + outname)
+    # os.system('chmod a+r ' + outname)
+    log.info('Done')
 
-def _latest_summary_file(outdir='.'):
-    
-    files = glob.glob(outdir + '/offline_matched_coadd_ccds_SV3-thru_????????.fits')
+
+def _latest_summary_file(outdir='.', phase='SV3'):
+
+    files = glob.glob(outdir + f'/offline_matched_coadd_ccds_{phase}-thru_????????.fits')
 
     files = np.array([os.path.splitext(f)[0] for f in files])
 
-    nights = np.array([int(f.split("_")[-1]) for f in files])    
+    nights = np.array([int(f.split("_")[-1]) for f in files])
 
     latest_summary_file = files[np.argmax(nights)]+'.fits'
-    
+
     latest_night = str(nights[np.argmax(nights)])
-    
+
     return latest_summary_file, latest_night
+
 
 def _next_obsnight(night='00000000'):
 
@@ -257,11 +299,12 @@ def _next_obsnight(night='00000000'):
     next_obsnight = datetime.date.isoformat(d+delta)
 
     next_obsnight = next_obsnight.replace("-","")
-    
+
     return next_obsnight
 
+
 def _load_concas_ccds_file(file):
-    
+
     hdul=fits.open(file)
 
     result = Table(hdul[1].data)
@@ -270,36 +313,37 @@ def _load_concas_ccds_file(file):
 
     return result, med, _med
 
+
 def _append_many_nights(night_min='20201214', night_max='99999999',
                        basedir=None, acq=False, phase='SV1',
                        outdir='.', user_basedir=None, workers=1):
-
+    log = get_logger()
     if not os.path.exists(outdir):
-        print('output directory does not exists ... quitting')
+        log.error('Output directory does not exist ... quitting!')
         return
 
     # Find the most recent daily summary file in the output dir
-    latest_summary_file, latest_night = _latest_summary_file(outdir=outdir)
-    print('The latest daily summary file includes data through '+latest_night)
+    latest_summary_file, latest_night = _latest_summary_file(outdir=outdir, phase=phase)
+    log.info('The latest daily summary file includes data through %s.', latest_night)
 
     next_obsnight = _next_obsnight(night=latest_night)
 
     # Check for new data
-    nights = _nights_list(night_min, night_max, basedir=basedir, acq=acq)
+    nights = nights_list(night_min, night_max, basedir=basedir, acq=acq)
 
     if len(nights) == 0:
-        print('Error: no reduced GFA data found in '+basedir)
+        log.error('No reduced GFA data found in %s!', basedir)
         return
-    
+
     if nights[-1] < next_obsnight:
-        print('Quitting... No new GFA data on or after '+next_obsnight)
+        log.warning('Quitting... No new GFA data on or after %s.', next_obsnight)
         return
 
     # Get the content of the most recent daily summary file
-    print('Loading '+latest_summary_file)
+    log.info('Loading %s...', latest_summary_file)
     existingResult, existingMed, existing_Med = _load_concas_ccds_file(latest_summary_file)
 
-    # Read in new data 
+    # Read in new data
 
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
@@ -311,12 +355,12 @@ def _append_many_nights(night_min='20201214', night_max='99999999',
                                             workers=workers)
 
     if result == -1:
-        print('No new GFA image found!')
+        log.warning('No new GFA image found!')
         return
-    
+
     cube_index = 0 if acq else -1
     if (np.sum(result['CUBE_INDEX'] != cube_index) > 0) or (np.sum(med['CUBE_INDEX'] != cube_index) > 0) or (np.sum(_med['CUBE_INDEX'] != cube_index) > 0):
-        print('WARNING: wrong CUBE_INDEX detected')
+        log.warning('wrong CUBE_INDEX detected')
 
     # Combine old and new records
     new_result = vstack([existingResult, result])
@@ -324,7 +368,7 @@ def _append_many_nights(night_min='20201214', night_max='99999999',
     new__med = vstack([existing_Med, _med])
 
     # save
-    
+
     hdul = fits.HDUList(hdus=[fits.PrimaryHDU(),
                               fits.BinTableHDU(data=new_result),
                               fits.BinTableHDU(data=new_med),
@@ -338,15 +382,13 @@ def _append_many_nights(night_min='20201214', night_max='99999999',
     outname = os.path.join(outdir, outname)
 
     if os.path.exists(outname):
-        print('summary file already exists !!!')
+        log.error('Summary file already exists!')
         return
 
-    print('attempting to write multi-extension FITS output to ' + outname)
+    log.info('Attempting to write multi-extension FITS output to %s.', outname)
     hdul.writeto(outname)
-    os.system('chgrp desi ' + outname)
-    os.system('chmod ug-w ' + outname)
-    os.system('chmod a+r ' + outname)
-    print('done')
+    log.info('Done.')
+
 
 if __name__=="__main__":
     descr = 'gather gfa_reduce _ccds table outputs'
@@ -380,7 +422,7 @@ if __name__=="__main__":
 
     if (args.workers < 1) or (args.workers > 32):
         print('bad number of workers specified')
-    
+
     _write_many_nights(night_min=args.night_min, night_max=args.night_max,
                        basedir=args.basedir, acq=args.acq, phase=args.phase,
                        outdir=args.outdir, user_basedir=args.my_redux_dir,

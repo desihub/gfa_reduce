@@ -1,23 +1,25 @@
-#!/usr/bin/env python
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.scripts.gfa_single_night
+===================================
 
+Process a single night of GFA images.
+
+Revised from Aaron Meisner's gfa_realtime.py.
+"""
 import sys, os, time
 from datetime import datetime
 import multiprocessing as mp
 import argparse
 import glob
-from gfa_reduce.gfa_red import _proc
-from gfa_reduce.common import expid_from_filename
+from ..gfa_red import _proc
+from ..common import expid_from_filename
 import numpy as np
 import astropy.io.fits as fits
 import json
 import gfa_reduce
-
-
-# revised from Aaron Meisner's gfa_realtime.py
-
-default_out_basedir = os.environ['DEFAULT_REDUX_DIR']
-# dts_raw = os.environ['DTS_RAW']
-dts_raw = os.environ['DESI_SPECTRO_DATA']
+from desiutil.log import get_logger
 
 
 class ProcItem:
@@ -36,11 +38,12 @@ class ProcItem:
         else:
             return ''
 
-def _check_flavor_json(gfa_image_fname):
-    gfa_json_fname = gfa_image_fname.replace('gfa-', 'request-')
-    gfa_json_fname = gfa_json_fname.replace('.fits.fz', '.json')
 
-    print(gfa_json_fname)
+def _check_flavor_json(gfa_image_fname):
+    log = get_logger()
+    gfa_json_fname = gfa_image_fname.replace('gfa-', 'request-').replace('.fits.fz', '.json')
+
+    log.debug('gfa_json_fname = %s', gfa_json_fname)
     assert(os.path.exists(gfa_json_fname))
 
     with open(gfa_json_fname) as json_file:
@@ -48,18 +51,22 @@ def _check_flavor_json(gfa_image_fname):
 
     return data['FLAVOR']
 
+
 def _is_flavor_science(gfa_image_fname):
     return _check_flavor_json(gfa_image_fname).lower() == 'science'
 
+
 def _set_indir(night, indir_base):
+    log = get_logger()
     indir = os.path.join(indir_base, night)
 
-    print('SEARCHING FOR FILES IN : ' + indir)
+    log.debug('SEARCHING FOR FILES IN : %s', indir)
 
     if not os.path.exists(indir):
-        print('WARNING: INPUT DIRECTORY DOES NOT CURRENTLY EXIST')
+        log.warning('INPUT DIRECTORY DOES NOT CURRENTLY EXIST')
 
     return indir
+
 
 def _set_night_basedir_out(night, out_basedir):
     night_basedir_out = os.path.join(out_basedir, night)
@@ -68,10 +75,12 @@ def _set_night_basedir_out(night, out_basedir):
 
     return night_basedir_out
 
+
 #- Function to run for each worker.
 #- Listens on Queue q for filenames to process.
 def _run(workerid, q, out_basedir, focus):
-    print('Worker {} ready to go'.format(workerid))
+    log = get_logger()
+    log.info('Worker %s ready to go', workerid)
     # pause to allow the queue to be filled
     # time.sleep(5)
     while not q.empty():
@@ -81,7 +90,7 @@ def _run(workerid, q, out_basedir, focus):
        #  image = q.get(block=True)
         image = q.get_nowait()
         filename = image.fname_raw
-        print('Worker {} processing {}'.format(workerid, filename))
+        log.info('Worker %s processing %s.', workerid, filename)
         sys.stdout.flush()
         #- Do something with that filename
         outdir = os.path.join(os.path.join(out_basedir, image.night),
@@ -103,31 +112,42 @@ def _run(workerid, q, out_basedir, focus):
                       no_ps1_xmatch=True, no_gaia_xmatch=True,
                       do_sky_mag=False, skip_2d_gaussians=True)
         except:
-            print('PROCESSING FAILURE: ' + image.fname_raw + '   ' + \
-                  image._cube_index_string())
-        print('Worker {} done with {}'.format(workerid, filename))
+            log.error('PROCESSING FAILURE: ' + image.fname_raw + '   ' + \
+                      image._cube_index_string())
+        log.info('Worker %s done with %s.', workerid, filename)
         sys.stdout.flush()
 
-    print('No files in the queue, Terminating worker {}'.format(workerid))
+    log.info('No files in the queue, Terminating worker %s.', workerid)
 
 
 def _gfa_single_night(night='20210405', numworkers=8,
-                      out_basedir=default_out_basedir, guider=True, focus=False,
-                      indir=dts_raw):
+                      out_basedir=None, guider=True, focus=False,
+                      indir=None):
+    log = get_logger()
     t0 = time.time()
 
-    print('running on host : ' + os.environ['HOSTNAME'])
-    print('PATH TO gfa_reduce IS : ')
-    print(gfa_reduce.__file__)
+    if indir is None:
+        try:
+            indir = os.environ['DESI_SPECTRO_DATA']
+        except KeyError:
+            raise ValueError('DESI_SPECTRO_DATA must be set or "indir" parameter specified!')
+    if out_basedir is None:
+        try:
+            out_basedir = os.environ['DEFAULT_REDUX_DIR']
+        except KeyError:
+            raise ValueError('DEFAULT_REDUX_DIR must be set or "out_basedir" parameter specified!')
+    log.debug('indir = "%s"', indir)
+    log.debug('out_basedir = "%s"', out_basedir)
+    log.info('Running on host : %s', os.environ['HOSTNAME'])
+    log.info('PATH TO gfa_reduce IS : %s', gfa_reduce.__file__)
 
     assert(os.path.exists(indir))
 
-    print('OBSERVING NIGHT IS : ' + night)
+    log.info('OBSERVING NIGHT IS : %s', night)
 
     night_indir = _set_indir(night, indir)
 
-    print('BASE OUTPUT DIRECTORY : ')
-    print(out_basedir)
+    log.info('BASE OUTPUT DIRECTORY : %s', out_basedir)
     assert(os.path.exists(out_basedir))
 
     night_basedir_out = _set_night_basedir_out(night, out_basedir)
@@ -144,7 +164,7 @@ def _gfa_single_night(night='20210405', numworkers=8,
 # this will not work correctly for cases where some subset of slices of a guide cube have been processed...
     known_files = set([night_indir + '/' + os.path.split(d)[-1] + '/' + prefix + os.path.split(d)[-1] + '.fits.fz' for d in exp_outdirs])
 
-    print('Number of known files = ', len(known_files))
+    log.info('Number of known files = %d', len(known_files))
 
 
     pattern = '????????/gfa*.fits.fz' if not guider else '????????/desi-????????.fits.fz'
@@ -161,18 +181,18 @@ def _gfa_single_night(night='20210405', numworkers=8,
     for filename in flist:
         if filename not in known_files:
             if guider or _is_flavor_science(filename):
-                print('Found file {} on the server'.format(filename))
+                log.info('Found file %s on the server.', filename)
                 sys.stdout.flush()
                 if not guider:
                     image = ProcItem(filename, night, cube_index=None)
                     q.put(image)
-                    print('Server putting {} in the queue'.format(filename))
+                    log.info('Server putting %s in the queue.', filename)
                     sys.stdout.flush()
                 else:
                 # should put in a pause here
                     fname_guide = filename.replace('desi-', 'guide-')
                     if not os.path.exists(fname_guide):
-                        print('spectro file has no corresponding guide cube : ' + filename)
+                        log.info('Spectro file has no corresponding guide cube : %s.', filename)
                         known_files.add(filename)
                         continue
 
@@ -186,18 +206,18 @@ def _gfa_single_night(night='20210405', numworkers=8,
                                         str(expid_from_filename(fname_guide)).zfill(8))
 
                     if (h['FRAMES'] <= 1):
-                        print('too few frames for matched coaddition : ' + fname_guide)
+                        log.info('Too few frames for matched coaddition : %s.', fname_guide)
                         known_files.add(filename)
                         continue
                     __cube_index = -1
                     os.mkdir(outdir) # avoids race condition in _proc ...
                     image = ProcItem(fname_guide, night, cube_index=__cube_index, mjdmin=mjdmin, mjdmax=mjdmax)
                     q.put(image)
-                    print('Server putting {} in the queue'.format(filename))
+                    log.info('Server putting %s in the queue.', filename)
                     sys.stdout.flush()
                     num_processed = num_processed+1
             else:
-                print('skipping ' + filename + ' ; NOT flavor=science')
+                log.info('Skipping %s ; NOT flavor=science', filename)
             known_files.add(filename)
 
 # wait for a few seconds to allow the queue to be filled
@@ -221,14 +241,16 @@ def _gfa_single_night(night='20210405', numworkers=8,
 
     dt = time.time() - t0
 
-    print('gfa_single_night took ' + '{:.2f}'.format(dt) + ' seconds')
-    print('Number of parallel processes used: ', len(procs))
-    print('Number of GFA guide images processed: ', num_processed)
+    log.info('gfa_single_night took %.2f seconds.', dt)
+    log.info('Number of parallel processes used: %d', len(procs))
+    log.info('Number of GFA guide images processed: %d', num_processed)
 
     return num_processed
 
 
 if __name__=="__main__":
+    dts_raw = os.environ['DESI_SPECTRO_DATA']
+    default_out_basedir = os.environ['DEFAULT_REDUX_DIR']
     descr = 'reduce a single-night GFA guide data'
     parser = argparse.ArgumentParser(description=descr)
 

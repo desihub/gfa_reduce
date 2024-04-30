@@ -1,5 +1,11 @@
-#!/usr/bin/env python
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.gfa_red
+==================
 
+Primary driver that gets called to run the GFA reduction pipeline end to end.
+"""
 import argparse
 import os
 import gfa_reduce.io as io
@@ -10,9 +16,14 @@ import gfa_reduce.analysis.recalib_astrom as wcs
 import gfa_reduce.analysis.dm as dm
 import time
 
-if 'desi' not in os.environ['HOSTNAME']:
-    import desiutil.iers
-    desiutil.iers.freeze_iers()
+from desiutil.log import get_logger
+
+#
+# This is now done in gfa_reduce.scripts.daily_summary.main().
+#
+# if 'desi' not in os.environ['HOSTNAME']:
+#     import desiutil.iers
+#     desiutil.iers.freeze_iers()
 
 class ProcObj():
     def __init__(self, fname_in, gitrev):
@@ -51,7 +62,7 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
           no_cataloging=False,
           no_gaia_xmatch=False, no_ps1_xmatch=False,
           cube_index=None, skip_image_outputs=False,
-          realtime=False, no_dark_rescaling=False, 
+          realtime=False, no_dark_rescaling=False,
           dont_write_invvar=False, skip_psf_models=False,
           compress_reduced_image=False, skip_raw_imstats=False,
           skip_astrometry=False, no_pm_pi_corr=False, write_psf_cubes=False,
@@ -63,17 +74,17 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
           search_rad_arcmin=6.0, do_sky_mag=True, gfa_targets=None,
           exp_data=None, minimal_ccds_metadata=False,
           skip_2d_gaussians=False, mjdmin=None, mjdmax=None, pmgstars=False):
-
-    print('Starting GFA reduction pipeline at: ' + str(datetime.utcnow()) + 
-          ' UTC')
+    log = get_logger()
+    log.info('Starting GFA reduction pipeline at: ' + str(datetime.utcnow()) +
+             ' UTC')
 
     t0 = time.time()
 
     try:
-        print('Running on host: ' + str(os.environ.get('HOSTNAME')))
+        log.info('Running on host: ' + str(os.environ.get('HOSTNAME')))
     except:
-        print('Could not retrieve hostname!')
-    
+        log.error('Could not retrieve hostname!')
+
     write_outputs = (outdir is not None)
 
     # one (but not both) of fname_in and exp_data should be specified
@@ -82,10 +93,10 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
     if fname_in is not None:
         assert(os.path.exists(fname_in))
 
-    gitrev = io.retrieve_git_rev()
+    gitrev = common.retrieve_git_rev()
 
     proc_obj = ProcObj(fname_in, gitrev)
-    
+
     if write_outputs:
         # fail if ANY of expected outputs already exist
         io.check_image_level_outputs_exist(outdir, fname_in, gzip=True,
@@ -104,7 +115,7 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
     # check for simulated data
     if (exp is None) or util.has_wrong_dimensions(exp):
         # point is to not crash, for sake of real time reductions
-        print('EXITING: exposure may be a simulation or contain only focus camera images?!')
+        log.critical('Exposure may be a simulation or contain only focus camera images?!')
         return
 
     if exp_data is not None:
@@ -118,7 +129,7 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
     # exp.create_all_bitmasks() # revisit this later
 
     exp_mjd = exp.exp_header['MJD-OBS']
-    
+
     # go from "raw" images to "reduced" images
     exp.calibrate_pixels(do_dark_rescaling=(not no_dark_rescaling),
                          mp=multiproc, do_apply_flatfield=apply_flatfield)
@@ -147,7 +158,7 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
 
         if not skip_astrometry:
             # run astrometric recalibration
-            print('Attempting astrometric recalibration relative to Gaia DR2')
+            log.info('Attempting astrometric recalibration relative to Gaia DR2')
 
             if gfa_targets is not None:
                 util.pm_pi_corr_fiberassign(gfa_targets, exp_mjd)
@@ -162,16 +173,16 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
 
         if not skip_psf_models:
             exp.compute_psfs(catalog)
-            
+
         if (not no_ps1_xmatch) and (par['ps1_env_var'] in os.environ):
             # probably should look into dec < -30 handling more at some point
-            print('Attempting to perform PS1 cross-matching...')
+            log.info('Attempting to perform PS1 cross-matching...')
             ps1 = io.get_ps1_matches(catalog, exp)
         else:
             ps1 = None
-            
+
         if (not no_gaia_xmatch) and (par['gaia_env_var'] in os.environ):
-            print('Attempting to identify Gaia cross-matches')
+            log.info('Attempting to identify Gaia cross-matches')
             catalog = io.append_gaia_crossmatches(catalog,
                                                   mjd=(None if no_pm_pi_corr else exp_mjd), gfa_targets=gfa_targets)
     else:
@@ -190,15 +201,15 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
 
     if pmgstars:
         exp.pmgstars_forcedphot()
-    
+
     if write_outputs:
 
         if not os.path.exists(outdir):
             os.mkdir(outdir)
-        
+
         if not skip_image_outputs:
-            print('Attempting to write image-level outputs to directory : ' + 
-                  outdir)
+            log.info('Attempting to write image-level outputs to directory : ' +
+                     outdir)
             # could add command line arg for turning off gzip compression
             io.write_image_level_outputs(exp, outdir, proc_obj, gzip=True,
                                          cube_index=cube_index,
@@ -236,13 +247,13 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
                                   check_header_cards=check_header_cards)
         if not return_fieldmodel:
             io.write_dm_fieldmodel(fm, outdir, fname_in, cube_index=cube_index)
-    
-    print('Successfully finished reducing ' + fname_in)
+
+    log.info('Successfully finished reducing ' + fname_in)
 
     dt = time.time() - t0
-    print('GFA reduction pipeline took ' + '{:.2f}'.format(dt) + ' seconds')
-    print('GFA reduction pipeline completed at: ' + str(datetime.utcnow()) + 
-          ' UTC')
+    log.info('GFA reduction pipeline took ' + '{:.2f}'.format(dt) + ' seconds')
+    log.info('GFA reduction pipeline completed at: ' + str(datetime.utcnow()) +
+             ' UTC')
 
     # for field acquisition mode
     if return_fieldmodel:
@@ -259,7 +270,7 @@ if __name__ == "__main__":
     parser.add_argument('--careful_sky', default=False, action='store_true',
         help='use image segmentation when deriving sky quantities')
 
-    parser.add_argument('--no_cataloging', default=False, action='store_true', 
+    parser.add_argument('--no_cataloging', default=False, action='store_true',
                         help='reduce image without cataloging sources')
 
     parser.add_argument('--no_gaia_xmatch', default=False, action='store_true',
@@ -283,7 +294,7 @@ if __name__ == "__main__":
                         action='store_true',
                         help='skip empirical rescaling of dark current')
 
-    parser.add_argument('--dont_write_invvar', default=False, 
+    parser.add_argument('--dont_write_invvar', default=False,
                         action='store_true',
                         help="don't write out invvar maps")
 
@@ -362,7 +373,7 @@ if __name__ == "__main__":
           no_cataloging=args.no_cataloging, no_gaia_xmatch=args.no_gaia_xmatch,
           no_ps1_xmatch=args.no_ps1_xmatch, cube_index=args.cube_index,
           skip_image_outputs=args.skip_image_outputs, realtime=args.realtime,
-          no_dark_rescaling=args.no_dark_rescaling, 
+          no_dark_rescaling=args.no_dark_rescaling,
           dont_write_invvar=args.dont_write_invvar,
           skip_psf_models=args.skip_psf_models,
           compress_reduced_image=args.compress_reduced_image,

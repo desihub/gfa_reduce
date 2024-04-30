@@ -1,3 +1,11 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.dark_current
+=======================
+
+Utilities related to dark current.
+"""
 import gfa_reduce.common as common
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,10 +14,11 @@ import os
 import astropy.io.fits as fits
 from scipy.optimize import minimize
 from copy import deepcopy
+from desiutil.log import get_logger
 
 # return dark current rate in e-/pix/sec as a function of temperature
-# based on DESI-3358 slide 9, or else my own dark current measurements once 
-# I get access to the relevant engineering data 
+# based on DESI-3358 slide 9, or else my own dark current measurements once
+# I get access to the relevant engineering data
 
 # once I get access to the engineering dark frames, would also be good
 # to construct *images* of the dark current rate
@@ -24,7 +33,7 @@ class DarkCurrentInfo:
 
         self.fname_master_dark = fname_master_dark
         self.extname = extname
-        
+
         if header is None:
             self.header = fits.getheader(fname_master_dark, extname=extname)
         else:
@@ -34,7 +43,7 @@ class DarkCurrentInfo:
 
         # note that this is the exposure time of the GFA image being detrended
         self.exptime = exptime
-        
+
         self.do_fit_dark_scaling = do_fit_dark_scaling
 
         # nominal dark scaling factor based on model of temperature dependence
@@ -85,12 +94,12 @@ def use_rescale_fac(factors):
     thresh = 1.3
 
     return (rat < thresh)
-    
+
 def _objective_function(p, im, dark):
 
     # im and dark should already be made 1-dimensional before being input !
     # and should already be subsampled
-    
+
     # p should have one element
     # p should generally be a factor relatively close to 1 like 1.1 or 0.9
 
@@ -105,7 +114,7 @@ def _objective_function(p, im, dark):
     spread = val_u - val_l
 
     return spread
-        
+
 def fit_dark_scaling_1amp(im, dark_guess_scaled, amp, extname):
     is_focus = extname.find('FOCUS') != -1
 
@@ -134,7 +143,7 @@ def fit_dark_scaling_1amp(im, dark_guess_scaled, amp, extname):
     initial_simplex[1] = 1.01
 
     n_all = _cutout.size
-    
+
     fac = 10
 
     n_subsample = int(np.floor(float(n_all)/float(fac)))
@@ -143,9 +152,9 @@ def fit_dark_scaling_1amp(im, dark_guess_scaled, amp, extname):
 
     _cutout = _cutout[ind_subsample]
     _dark_cutout = _dark_cutout[ind_subsample]
-    
+
     res = minimize(_objective_function, [1.0], args=(_cutout, _dark_cutout), method='Nelder-Mead', options={'maxfev': 200, 'disp': False, 'initial_simplex': initial_simplex, 'adaptive': False, 'fatol': 1.0e-5})
-    
+
     return res
 
 def fit_dark_scaling(im, dark_guess_scaled, extname):
@@ -153,7 +162,7 @@ def fit_dark_scaling(im, dark_guess_scaled, extname):
 
     # im should have overscan stripped out
     # dark should have overscan stripped out
-  
+
     # dark should be scaled according to exptime and best guess of
     # T dependence so that the additional scaling fit out by this routine
     # is a perturbation
@@ -179,7 +188,7 @@ def fit_dark_scaling(im, dark_guess_scaled, extname):
         success[i] = res.success
 
     return rescale_factors, ncalls, success
-    
+
 def dark_current_rate(t_celsius):
     """
     t_celsius - temperature in deg celsius
@@ -264,6 +273,7 @@ def dark_scaling_factor(t_master, t_image, extname):
     return fac
 
 def read_dark_image(extname, exptime, t_celsius):
+    log = get_logger()
     assert(common.is_valid_extname(extname))
 
     par = common.gfa_misc_params()
@@ -275,12 +285,12 @@ def read_dark_image(extname, exptime, t_celsius):
     # then just go back to some 'standard' 5 s master dark
     # REVISIT THIS LATER TO DO BETTER
     if dark_fname is None:
-        print('could not find a master dark with ORIGTIME matching EXPTIME')
+        log.warning('Could not find a master dark with ORIGTIME matching EXPTIME!')
         dark_fname = os.path.join(os.environ[par['meta_env_var']], \
                                   par['master_dark_filename'])
 
-    print('Attempting to read master dark : ' + dark_fname + 
-          ', extension name : ' + extname)
+    log.info('Attempting to read master dark : %s, extension name : %s.',
+             dark_fname, extname)
 
     assert(os.path.exists(dark_fname))
 
@@ -291,12 +301,12 @@ def read_dark_image(extname, exptime, t_celsius):
 
 def total_dark_image_adu(extname, exptime, t_celsius, im,
                          do_dark_rescaling=True):
-
+    log = get_logger()
     # im is the bias-subtracted, overscan/prescan removed version of the
     # image being reduced
-    
+
     # return a predicted image of the total dark current in
-    # a GFA image by scaling the master dark image to account 
+    # a GFA image by scaling the master dark image to account
     # for the exposure time and temperature
     # return value will be in ADU !!!
 
@@ -305,11 +315,11 @@ def total_dark_image_adu(extname, exptime, t_celsius, im,
     # nominal rescaling factor from linear fits of temperature dependence
     temp_scaling_factor = dark_scaling_factor(hdark['GCCDTEMP'], t_celsius,
                                               extname)
-    
+
     dark_image *= temp_scaling_factor
 
     dark_image *= exptime
-    
+
     if do_dark_rescaling:
         rescale_factors, ncalls, success = fit_dark_scaling(im, dark_image,
                                                             extname)
@@ -319,7 +329,7 @@ def total_dark_image_adu(extname, exptime, t_celsius, im,
         else:
             rescale_factor = 1.0
     else:
-        print('skipping empirical fit of dark current scaling')
+        log.info('skipping empirical fit of dark current scaling')
         rescale_factor = 1.0
         use_rescaling = False
         rescale_factors = np.array([np.nan]*4)
@@ -328,20 +338,20 @@ def total_dark_image_adu(extname, exptime, t_celsius, im,
 
     dc = DarkCurrentInfo(dark_fname, extname, do_dark_rescaling,
                          temp_scaling_factor, rescale_factor,
-                         rescale_factors, exptime, use_rescaling, 
+                         rescale_factors, exptime, use_rescaling,
                          ncalls, success, header=hdark)
-        
+
     return dark_image*rescale_factor, dc
 
 def choose_master_dark(exptime, extname, gccdtemp):
-
+    log = get_logger()
     par = common.gfa_misc_params()
-    
+
     # eventually could cache the index of master darks...
     fname_index = os.path.join(os.environ[par['meta_env_var']], par['dark_index_filename'])
 
-    print('Reading master dark index table : ' + fname_index)
-    
+    log.info('Reading master dark index table : %s', fname_index)
+
     assert(os.path.exists(fname_index))
     str = fits.getdata(fname_index)
 

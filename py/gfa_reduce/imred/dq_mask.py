@@ -1,6 +1,15 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# -*- coding: utf-8 -*-
+"""
+gfa_reduce.imred.dq_mask
+========================
+
+Image mask utilities.
+"""
 import gfa_reduce.common as common
 import gfa_reduce.imred.load_calibs as load_calibs
 import numpy as np
+
 
 def create_satmask(im, extname):
     # im is just a 2D array of pixels, not a GFA_image object
