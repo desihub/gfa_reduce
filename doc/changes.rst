@@ -6,6 +6,11 @@ Change Log
 tags have been created to be consistent with ``X.Y.Z`` conventions, and the
 corresponding old tag is listed with the date in the titles below.
 
+1.0.1 (unreleased)
+------------------
+
+* No changes yet.
+
 1.0.0 (2024-04-30)
 ------------------
 
