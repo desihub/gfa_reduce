@@ -229,7 +229,7 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
 
 
 def _write_many_nights(night_min='20201214', night_max='99999999',
-                       basedir=None, acq=False, phase='SV1',
+                       basedir=None, acq=False, phase='main',
                        outdir='.', user_basedir=None, workers=1):
     log = get_logger()
     if not os.path.exists(outdir):
@@ -273,19 +273,40 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
     log.info('Done')
 
 
-def _latest_summary_file(outdir='.', phase='SV3'):
+def _latest_summary_file(outdir='.', phase='main'):
+    """Find the most recent summary file.
 
-    files = glob.glob(outdir + f'/offline_matched_coadd_ccds_{phase}-thru_????????.fits')
+    Parameters
+    ----------
+    outdir : :class:`str`, optional
+        Directory to search.
+    phase : :class:`str`, optional
+        Survey phase.
 
-    files = np.array([os.path.splitext(f)[0] for f in files])
+    Returns
+    -------
+    :class:`tuple`
+        A tuple of the filename and most recent night.
+    """
+    files = glob.glob(os.path.join(outdir, f'offline_matched_coadd_ccds_{phase}-thru_????????.fits'))
+    if len(files) == 0:
+        old_phases = ('main', 'SV3', 'SV2', 'SV1')
+        for ph in old_phases:
+            files = glob.glob(os.path.join(outdir, f'offline_matched_coadd_ccds_{ph}-thru_????????.fits'))
+            if len(files) > 0:
+                break
 
-    nights = np.array([int(f.split("_")[-1]) for f in files])
+    basenames = [os.path.splitext(f)[0] for f in files]
 
-    latest_summary_file = files[np.argmax(nights)]+'.fits'
+    nights = np.array([int(f.split("_")[-1]) for f in basenames])
 
-    latest_night = str(nights[np.argmax(nights)])
+    last_night = np.argmax(nights)
 
-    return latest_summary_file, latest_night
+    latest_summary_file = basenames[last_night]+'.fits'
+
+    latest_night = str(nights[last_night])
+
+    return (latest_summary_file, latest_night)
 
 
 def _next_obsnight(night='00000000'):
@@ -315,8 +336,8 @@ def _load_concas_ccds_file(file):
 
 
 def _append_many_nights(night_min='20201214', night_max='99999999',
-                       basedir=None, acq=False, phase='SV1',
-                       outdir='.', user_basedir=None, workers=1):
+                        basedir=None, acq=False, phase='main',
+                        outdir='.', user_basedir=None, workers=1):
     log = get_logger()
     if not os.path.exists(outdir):
         log.error('Output directory does not exist ... quitting!')
@@ -406,7 +427,7 @@ if __name__=="__main__":
     parser.add_argument('--night_max', default='99999999', type=str,
                         help='last observing night')
 
-    parser.add_argument('--phase', default='SV1', type=str,
+    parser.add_argument('--phase', default='main', type=str,
                         help='survey phase (SV1, SV2, ...)')
 
     parser.add_argument('--outdir', default='.', type=str,
