@@ -9,7 +9,9 @@ corresponding old tag is listed with the date in the titles below.
 1.0.1 (unreleased)
 ------------------
 
-* No changes yet.
+* Fix an issue where summary files from a previous phase were not recognized (PR `#23`_).
+
+.. _`#23`: https://github.com/desihub/gfa_reduce/pull/23
 
 1.0.0 (2024-04-30)
 ------------------
