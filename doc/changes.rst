@@ -6,7 +6,7 @@ Change Log
 tags have been created to be consistent with ``X.Y.Z`` conventions, and the
 corresponding old tag is listed with the date in the titles below.
 
-1.0.1 (unreleased)
+1.0.1 (2024-05-16)
 ------------------
 
 * Fix an issue where summary files from a previous phase were not recognized (PR `#23`_).
