@@ -288,17 +288,21 @@ def _latest_summary_file(outdir='.', phase='main'):
     :class:`tuple`
         A tuple of the filename and most recent night.
     """
-    files = glob.glob(os.path.join(outdir, f'/offline_matched_coadd_ccds_{phase}-thru_????????.fits'))
+    log = get_logger()
+    files = glob.glob(os.path.join(outdir, f'offline_matched_coadd_ccds_{phase}-thru_????????.fits'))
     if len(files) == 0:
         old_phases = ('main', 'SV3', 'SV2', 'SV1')
         for ph in old_phases:
-            files = glob.glob(os.path.join(outdir, f'/offline_matched_coadd_ccds_{ph}-thru_????????.fits'))
+            log.info("Searching for summary files with phase = %s.", ph)
+            files = glob.glob(os.path.join(outdir, f'offline_matched_coadd_ccds_{ph}-thru_????????.fits'))
             if len(files) > 0:
                 break
 
     basenames = [os.path.splitext(f)[0] for f in files]
+    log.debug(basenames)
 
     nights = np.array([int(f.split("_")[-1]) for f in basenames])
+    log.debug(nights)
 
     last_night = np.argmax(nights)
 
