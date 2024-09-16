@@ -111,8 +111,10 @@ def _run(workerid, q, out_basedir, focus):
                       skip_raw_imstats=True, skip_astrometry=True,
                       no_ps1_xmatch=True, no_gaia_xmatch=True,
                       do_sky_mag=False, skip_2d_gaussians=True)
-        except:
-            log.error('PROCESSING FAILURE: ' + image.fname_raw + '   ' + \
+        except Exception as e:
+            log.error('%s', str(type(e)))
+            log.error('%s', e.args[0])
+            log.error('PROCESSING FAILURE: %s %d', image.fname_raw,
                       image._cube_index_string())
         log.info('Worker %s done with %s.', workerid, filename)
         sys.stdout.flush()
