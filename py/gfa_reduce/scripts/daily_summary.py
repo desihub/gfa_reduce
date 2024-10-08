@@ -56,9 +56,10 @@ def gfa_recent_nights(add_nights=[], workers=8):
         log.info('No new raw GFA data to process.')
         return
 
-    _nights = np.array(nights + add_nights)
+    _nights = np.array(nights)
     _nights = _nights[(_nights > max(processed_nights))]
-
+    if len(add_nights) > 0:
+        _nights = np.concatenate((_nights, np.array(add_nights)))
     nights = np.unique(_nights).tolist()
 
     nights.sort()
