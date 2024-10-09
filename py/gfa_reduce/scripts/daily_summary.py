@@ -25,7 +25,7 @@ from .concat_ccds import nights_list, _get_default_basedir, _append_many_nights
 from .gfa_single_night import _gfa_single_night
 
 
-def gfa_recent_nights(add_nights=[], workers=8):
+def gfa_recent_nights(add_nights=None, workers=8):
     """Process all recent nights with GFA data that have not been processed yet.
 
     This is a wrapper on several other functions.
@@ -51,8 +51,7 @@ def gfa_recent_nights(add_nights=[], workers=8):
     log.debug('Most recent night with raw GFA data: %s', max(nights))
     log.debug('Most recent night with processed GFA data: %s', max(processed_nights))
 
-
-    if max(processed_nights) >= max(nights):
+    if (max(processed_nights) >= max(nights)) and (add_nights is None or len(add_nights) == 0):
         log.info('No new raw GFA data to process.')
         return
 
@@ -67,8 +66,10 @@ def gfa_recent_nights(add_nights=[], workers=8):
     t0 = time.time()
     num_processed = 0
     for night in nights:
-        _n = _gfa_single_night(night=night, numworkers=workers, out_basedir=out_basedir, guider=True, focus=False, indir=basedir)
-        num_processed = num_processed + _n
+        _n = _gfa_single_night(night=night, numworkers=workers,
+                               out_basedir=out_basedir, guider=True, focus=False,
+                               indir=basedir)
+        num_processed += _n
 
     dt = time.time() - t0
 
