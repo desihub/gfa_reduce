@@ -57,7 +57,7 @@ def gfa_recent_nights(add_nights=None, workers=8):
 
     _nights = np.array(nights)
     _nights = _nights[(_nights > max(processed_nights))]
-    if len(add_nights) > 0:
+    if add_nights is not None and len(add_nights) > 0:
         _nights = np.concatenate((_nights, np.array(add_nights)))
     nights = np.unique(_nights).tolist()
 
