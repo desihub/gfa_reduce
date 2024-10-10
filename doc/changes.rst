@@ -13,9 +13,12 @@ corresponding old tag is listed with the date in the titles below.
   ``gfa_reduce.scripts.gfa_single_night._run()`` (direct commit to ``main``, `e534bf3`_)
 * Add a notebook to find instances of ``NaN`` in GFA summary files
   (direct commit to ``main``, `988ad02`_).
+* Allow reprocessing of additional nights out-of-sequence (PR `#25`_).
 
 .. _`e534bf3`: https://github.com/desihub/gfa_reduce/commit/e534bf3e82eb976ed8254f62fdf79f6ab41ad9ef
 .. _`988ad02`: https://github.com/desihub/gfa_reduce/commit/988ad0263ff963ce0a3c66138e9b901f9f7abedc
+
+.. _`#25`: https://github.com/desihub/gfa_reduce/pull/25
 
 1.0.1 (2024-05-16)
 ------------------
