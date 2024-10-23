@@ -6,7 +6,7 @@ Change Log
 tags have been created to be consistent with ``X.Y.Z`` conventions, and the
 corresponding old tag is listed with the date in the titles below.
 
-1.0.2 (unreleased)
+1.0.2 (2024-10-23)
 ------------------
 
 * Debug some processing failures by improving exception handling in
