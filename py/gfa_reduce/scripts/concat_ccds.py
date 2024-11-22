@@ -265,7 +265,7 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
         return
 
     log.info('Attempting to write multi-extension FITS output to ' + outname)
-    hdul.writeto(outname)
+    hdul.writeto(outname, checksum=True)
     # os.system('chgrp desi ' + outname)
     # os.system('chmod ug-w ' + outname)
     # os.system('chmod a+r ' + outname)

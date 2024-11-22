@@ -9,7 +9,9 @@ corresponding old tag is listed with the date in the titles below.
 1.0.3 (unreleased)
 ------------------
 
-* Add ``EXTNAME`` header keywords to summary file.
+* Add ``EXTNAME`` header keywords to summary file (PR `#27`_).
+
+.. _`#27`: https://github.com/desihub/gfa_reduce/pull/27
 
 1.0.2 (2024-10-23)
 ------------------
