@@ -9,7 +9,7 @@ corresponding old tag is listed with the date in the titles below.
 1.0.3 (unreleased)
 ------------------
 
-* No changes yet.
+* Add ``EXTNAME`` header keywords to summary file.
 
 1.0.2 (2024-10-23)
 ------------------

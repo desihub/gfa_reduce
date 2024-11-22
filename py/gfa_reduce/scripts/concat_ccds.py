@@ -250,14 +250,13 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
         log.warning('wrong CUBE_INDEX detected')
 
     hdul = fits.HDUList(hdus=[fits.PrimaryHDU(),
-                              fits.BinTableHDU(data=result),
-                              fits.BinTableHDU(data=med),
-                              fits.BinTableHDU(data=_med)])
+                              fits.BinTableHDU(data=result, name='CAMERA_SUMMARY'),
+                              fits.BinTableHDU(data=med, name='EXPOSURE_SUMMARY'),
+                              fits.BinTableHDU(data=_med, name='EXPOSURE_SUMMARY_STRICT')])
 
     night = str(np.max(result['NIGHT']))
     flavor = 'matched_coadd' if not acq else 'acq'
-    outname = 'offline_' + flavor + '_ccds_' + phase + '-thru_' + \
-              night + '.fits'
+    outname = f'offline_{flavor}_ccds_{phase}-thru_{night}.fits'
 
     outname = os.path.join(outdir, outname)
 
