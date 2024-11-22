@@ -247,7 +247,7 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
 
     cube_index = 0 if acq else -1
     if (np.sum(result['CUBE_INDEX'] != cube_index) > 0) or (np.sum(med['CUBE_INDEX'] != cube_index) > 0) or (np.sum(_med['CUBE_INDEX'] != cube_index) > 0):
-        log.warning('wrong CUBE_INDEX detected')
+        log.warning('Wrong CUBE_INDEX detected!')
 
     hdul = fits.HDUList(hdus=[fits.PrimaryHDU(),
                               fits.BinTableHDU(data=result, name='CAMERA_SUMMARY'),
@@ -256,20 +256,15 @@ def _write_many_nights(night_min='20201214', night_max='99999999',
 
     night = str(np.max(result['NIGHT']))
     flavor = 'matched_coadd' if not acq else 'acq'
-    outname = f'offline_{flavor}_ccds_{phase}-thru_{night}.fits'
-
-    outname = os.path.join(outdir, outname)
+    outname = os.path.join(outdir, f'offline_{flavor}_ccds_{phase}-thru_{night}.fits')
 
     if os.path.exists(outname):
         log.warning('Summary file already exists!')
         return
 
-    log.info('Attempting to write multi-extension FITS output to ' + outname)
+    log.info('Attempting to write multi-extension FITS output to %s.', outname)
     hdul.writeto(outname, checksum=True)
-    # os.system('chgrp desi ' + outname)
-    # os.system('chmod ug-w ' + outname)
-    # os.system('chmod a+r ' + outname)
-    log.info('Done')
+    log.info('Done.')
 
 
 def _latest_summary_file(outdir='.', phase='main'):
