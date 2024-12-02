@@ -21,7 +21,7 @@ import numpy as np
 from desiutil.iers import freeze_iers
 from desiutil.log import get_logger, DEBUG
 
-from .concat_ccds import nights_list, _get_default_basedir, _append_many_nights
+from .concat_ccds import nights_list, _get_default_basedir, write_many_nights
 from .gfa_single_night import _gfa_single_night
 
 
@@ -93,8 +93,8 @@ def gfa_daily_summary(workers=8):
     outdir = os.environ['GFA_SUMMRY_FILE_DIR']
     log.debug('basedir = %s', basedir)
     log.debug('outdir = %s', outdir)
-    _append_many_nights(night_min='20210405', basedir=basedir,
-                        outdir=outdir, workers=workers)
+    write_many_nights(night_min='20210405', basedir=basedir,
+                      outdir=outdir, workers=workers, append=True)
     return
 
 
