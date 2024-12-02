@@ -236,9 +236,9 @@ def write_many_nights(night_min='20201214', night_max='99999999',
 
     Parameters
     ----------
-    night_min : :class:`str`
+    night_min : :class:`str`, optional
         The earliest night to search for, in YYYYMMDD format.
-    night_max : :class:`str`
+    night_max : :class:`str`, optional
         The last night to search for, in YYYYMMDD format.
     basedir : :class:`str`, optional
         The directory containing night directories.
@@ -248,7 +248,7 @@ def write_many_nights(night_min='20201214', night_max='99999999',
         Survey phase.
     outdir : :class:`str`, optional
         Write FITS file to this directory.
-    user_basedir :class:`str`, optional
+    user_basedir : :class:`str`, optional
         This parameter is passed to :func:`~gfa_reduce.scripts.concat_ccds._concat_many_nights`.
     workers : :class:`int`, optional
         This parameter is passed to :func:`~gfa_reduce.scripts.concat_ccds._concat_many_nights`.
