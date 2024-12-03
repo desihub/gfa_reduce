@@ -6,7 +6,7 @@ Change Log
 tags have been created to be consistent with ``X.Y.Z`` conventions, and the
 corresponding old tag is listed with the date in the titles below.
 
-1.0.3 (unreleased)
+1.0.3 (2024-12-03)
 ------------------
 
 * Add ``EXTNAME`` header keywords to summary file (PR `#27`_).
