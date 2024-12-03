@@ -228,49 +228,109 @@ def _concat_many_nights(night_min='20201214', night_max='99999999',
     return result, med, _med
 
 
-def _write_many_nights(night_min='20201214', night_max='99999999',
-                       basedir=None, acq=False, phase='main',
-                       outdir='.', user_basedir=None, workers=1):
+def write_many_nights(night_min='20201214', night_max='99999999',
+                      basedir=None, acq=False, phase='main',
+                      outdir='.', user_basedir=None, workers=1,
+                      append=False):
+    """Write summary data to a FITS file.
+
+    Parameters
+    ----------
+    night_min : :class:`str`, optional
+        The earliest night to search for, in YYYYMMDD format.
+    night_max : :class:`str`, optional
+        The last night to search for, in YYYYMMDD format.
+    basedir : :class:`str`, optional
+        The directory containing night directories.
+    acq : :class:`bool`, optional
+        If ``True`` set the ``acq`` suffix when searching for `basedir`.
+    phase : :class:`str`, optional
+        Survey phase.
+    outdir : :class:`str`, optional
+        Write FITS file to this directory.
+    user_basedir : :class:`str`, optional
+        This parameter is passed to :func:`~gfa_reduce.scripts.concat_ccds._concat_many_nights`.
+    workers : :class:`int`, optional
+        This parameter is passed to :func:`~gfa_reduce.scripts.concat_ccds._concat_many_nights`.
+    append : :class:`bool`, optional
+        If ``True``, append new data to existing data.
+    """
     log = get_logger()
     if not os.path.exists(outdir):
-        log.warning('Output directory does not exist ... quitting.')
+        log.error('Output directory does not exist ... quitting.')
         return
 
     if basedir is None:
         basedir = _get_default_basedir(acq=acq)
 
+    if append:
+        # Find the most recent daily summary file in the output dir.
+        latest_summary_file, latest_night = _latest_summary_file(outdir=outdir, phase=phase)
+        log.info('The latest daily summary file includes data through %s.', latest_night)
+
+        next_obsnight = _next_obsnight(night=latest_night)
+
+        # Check for new data
+        nights = nights_list(night_min, night_max, basedir=basedir, acq=acq)
+
+        if len(nights) == 0:
+            log.error('No reduced GFA data found in %s!', basedir)
+            return
+
+        if nights[-1] < next_obsnight:
+            log.warning('Quitting... No new GFA data on or after %s.', next_obsnight)
+            return
+
+        night_min = next_obsnight
+        night_max = nights[-1]
+
+        # Get the content of the most recent daily summary file
+        log.info('Loading %s...', latest_summary_file)
+        existingResult, existingMed, existing_Med = _load_concas_ccds_file(latest_summary_file)
+
+    # Read in new data
     result, med, _med = _concat_many_nights(night_min=night_min,
                                             night_max=night_max,
                                             basedir=basedir, acq=acq,
                                             user_basedir=user_basedir,
                                             workers=workers)
 
+    if append and result == -1:
+        log.error('No new GFA images found!')
+        return
+
     cube_index = 0 if acq else -1
     if (np.sum(result['CUBE_INDEX'] != cube_index) > 0) or (np.sum(med['CUBE_INDEX'] != cube_index) > 0) or (np.sum(_med['CUBE_INDEX'] != cube_index) > 0):
-        log.warning('wrong CUBE_INDEX detected')
+        log.warning('Wrong CUBE_INDEX detected!')
+
+    if append:
+        camera_summary = vstack([existingResult, result])
+        exposure_summary = vstack([existingMed, med])
+        exposure_summary_strict = vstack([existing_Med, _med])
+    else:
+        camera_summary = result
+        exposure_summary = med
+        exposure_summary_strict = _med
 
     hdul = fits.HDUList(hdus=[fits.PrimaryHDU(),
-                              fits.BinTableHDU(data=result),
-                              fits.BinTableHDU(data=med),
-                              fits.BinTableHDU(data=_med)])
+                              fits.BinTableHDU(data=camera_summary,
+                                               name='CAMERA_SUMMARY'),
+                              fits.BinTableHDU(data=exposure_summary,
+                                               name='EXPOSURE_SUMMARY'),
+                              fits.BinTableHDU(data=exposure_summary_strict,
+                                               name='EXPOSURE_SUMMARY_STRICT')])
 
     night = str(np.max(result['NIGHT']))
     flavor = 'matched_coadd' if not acq else 'acq'
-    outname = 'offline_' + flavor + '_ccds_' + phase + '-thru_' + \
-              night + '.fits'
-
-    outname = os.path.join(outdir, outname)
+    outname = os.path.join(outdir, f'offline_{flavor}_ccds_{phase}-thru_{night}.fits')
 
     if os.path.exists(outname):
-        log.warning('Summary file already exists!')
+        log.error('Summary file, %s, already exists!', outname)
         return
 
-    log.info('Attempting to write multi-extension FITS output to ' + outname)
-    hdul.writeto(outname)
-    # os.system('chgrp desi ' + outname)
-    # os.system('chmod ug-w ' + outname)
-    # os.system('chmod a+r ' + outname)
-    log.info('Done')
+    log.info('Attempting to write multi-extension FITS output to %s.', outname)
+    hdul.writeto(outname, checksum=True)
+    log.info('Done.')
 
 
 def _latest_summary_file(outdir='.', phase='main'):
@@ -343,6 +403,9 @@ def _append_many_nights(night_min='20201214', night_max='99999999',
         log.error('Output directory does not exist ... quitting!')
         return
 
+    if basedir is None:
+        basedir = _get_default_basedir(acq=acq)
+
     # Find the most recent daily summary file in the output dir
     latest_summary_file, latest_night = _latest_summary_file(outdir=outdir, phase=phase)
     log.info('The latest daily summary file includes data through %s.', latest_night)
@@ -366,9 +429,6 @@ def _append_many_nights(night_min='20201214', night_max='99999999',
 
     # Read in new data
 
-    if basedir is None:
-        basedir = _get_default_basedir(acq=acq)
-
     result, med, _med = _concat_many_nights(night_min=next_obsnight,
                                             night_max=nights[-1],
                                             basedir=basedir, acq=acq,
@@ -381,7 +441,7 @@ def _append_many_nights(night_min='20201214', night_max='99999999',
 
     cube_index = 0 if acq else -1
     if (np.sum(result['CUBE_INDEX'] != cube_index) > 0) or (np.sum(med['CUBE_INDEX'] != cube_index) > 0) or (np.sum(_med['CUBE_INDEX'] != cube_index) > 0):
-        log.warning('wrong CUBE_INDEX detected')
+        log.warning('Wrong CUBE_INDEX detected!')
 
     # Combine old and new records
     new_result = vstack([existingResult, result])
@@ -391,23 +451,20 @@ def _append_many_nights(night_min='20201214', night_max='99999999',
     # save
 
     hdul = fits.HDUList(hdus=[fits.PrimaryHDU(),
-                              fits.BinTableHDU(data=new_result),
-                              fits.BinTableHDU(data=new_med),
-                              fits.BinTableHDU(data=new__med)])
+                              fits.BinTableHDU(data=new_result, name='CAMERA_SUMMARY'),
+                              fits.BinTableHDU(data=new_med, name='EXPOSURE_SUMMARY'),
+                              fits.BinTableHDU(data=new__med, name='EXPOSURE_SUMMARY_STRICT')])
 
     night = str(np.max(result['NIGHT']))
     flavor = 'matched_coadd' if not acq else 'acq'
-    outname = 'offline_' + flavor + '_ccds_' + phase + '-thru_' + \
-              night + '.fits'
-
-    outname = os.path.join(outdir, outname)
+    outname = os.path.join(outdir, f'offline_{flavor}_ccds_{phase}-thru_{night}.fits')
 
     if os.path.exists(outname):
-        log.error('Summary file already exists!')
+        log.warning('Summary file already exists!')
         return
 
     log.info('Attempting to write multi-extension FITS output to %s.', outname)
-    hdul.writeto(outname)
+    hdul.writeto(outname, checksum=True)
     log.info('Done.')
 
 
@@ -444,8 +501,8 @@ if __name__=="__main__":
     if (args.workers < 1) or (args.workers > 32):
         print('bad number of workers specified')
 
-    _write_many_nights(night_min=args.night_min, night_max=args.night_max,
-                       basedir=args.basedir, acq=args.acq, phase=args.phase,
-                       outdir=args.outdir, user_basedir=args.my_redux_dir,
-                       workers=args.workers)
+    write_many_nights(night_min=args.night_min, night_max=args.night_max,
+                      basedir=args.basedir, acq=args.acq, phase=args.phase,
+                      outdir=args.outdir, user_basedir=args.my_redux_dir,
+                      workers=args.workers)
 
