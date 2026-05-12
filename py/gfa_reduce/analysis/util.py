@@ -19,7 +19,12 @@ import gfa_reduce.xmatch.gaia as gaia
 from astropy.time import Time
 import astropy
 from datetime import datetime
-from photutils import aperture_photometry
+try:
+    # photutils >= 2.0
+    from photutils.aperture import aperture_photometry
+except ImportError:
+    # photutils < 2.0
+    from photutils import aperture_photometry
 from photutils import CircularAperture, CircularAnnulus, EllipticalAperture
 import photutils
 from astropy.stats import sigma_clipped_stats
