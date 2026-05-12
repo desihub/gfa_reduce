@@ -16,11 +16,17 @@ jobs:
         strategy:
             fail-fast: true
             matrix:
-                os: [ubuntu-latest]
-                python-version: ['3.10']  #, '3.11'] There are still issues with Numpy <1.23 and 3.11.
-                numpy-version: ['<1.23']
-                astropy-version: ['<6.0', '<7.0']
-                desimeter-version: ['0.7.0']
+                include:
+                    - os: ubuntu-latest
+                      python-version: '3.13'
+                      numpy-version: '<2.4'
+                      astropy-version: '<8.0'
+                      desimeter-version: '0.9.0'
+                    - os: ubuntu-latest
+                      python-version: '3.10'
+                      numpy-version: '<1.23'
+                      astropy-version: '<6.1'
+                      desimeter-version: '0.7.0'
 
         steps:
             - name: Checkout code
@@ -49,7 +55,7 @@ jobs:
                 os: [ubuntu-latest]
                 python-version: ['3.10']
                 numpy-version: ['<1.23']
-                astropy-version: ['<6.0']
+                astropy-version: ['<6.1']
                 desimeter-version: ['0.7.0']
 
         steps:
