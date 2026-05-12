@@ -13,7 +13,7 @@ from astropy.convolution import Gaussian2DKernel
 from astropy.stats import gaussian_fwhm_to_sigma
 try:
     # photutils >= 2.0
-    from photutils.detection import detect_threshold, detect_sources
+    from photutils.segmentation import detect_threshold, detect_sources
 except ImportError:
     # photutils < 2.0
     from photutils import detect_threshold, detect_sources
