@@ -10,7 +10,15 @@ import gfa_reduce.common as common
 import numpy as np
 import os
 from astropy.table import Table
-from astropy.coordinates import SkyCoord, AltAz, get_sun, get_moon
+from astropy.coordinates import SkyCoord, AltAz, get_sun
+_has_get_moon = False
+try:
+    # astropy >= 7
+    from astropy.coordinates import get_body
+except ImportError:
+    # astropy < 7
+    from astropy.coordinates import get_moon
+    _has_get_moon = True
 from astropy.io import fits
 from astropy.time import Time
 from astropy.stats import sigma_clipped_stats
@@ -806,7 +814,10 @@ def coadd_cube_index_range(bintable, cube_index, mjdrange):
 # from John Moustakas notebook
 def moon_phase_angle(time, location):
     sun = get_sun(time).transform_to(AltAz(location=location, obstime=time))
-    moon = get_moon(time, location)
+    if _has_get_moon:
+        moon = get_moon(time, location)
+    else:
+        moon = get_body('moon', time, location=location)
     elongation = sun.separation(moon)
     return np.arctan2(sun.distance*np.sin(elongation),
                       moon.distance - sun.distance*np.cos(elongation))
