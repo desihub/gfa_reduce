@@ -14,11 +14,14 @@ from scipy import ndimage
 import numpy as np
 from scipy.ndimage.measurements import label, find_objects
 from astropy.table import Table
-#from photutils.centroids.core import fit_2dgaussian
 from gfa_reduce.analysis.gaussian import fit_2dgaussian
 from astropy.stats import sigma_clipped_stats
-from photutils import aperture_photometry
-from photutils import CircularAperture, CircularAnnulus, EllipticalAperture
+try:
+    # photutils >= 2.0
+    from photutils.aperture import aperture_photometry, CircularAperture, CircularAnnulus, EllipticalAperture
+except ImportError:
+    # photutils < 2.0
+    from photutils import aperture_photometry, CircularAperture, CircularAnnulus, EllipticalAperture
 import gfa_reduce.common as common
 import gfa_reduce.analysis.djs_maskinterp as djs_maskinterp
 from gfa_reduce.analysis.djs_photcen import _loop_djs_photcen
