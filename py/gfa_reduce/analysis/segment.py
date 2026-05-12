@@ -6,17 +6,36 @@ gfa_reduce.analysis.segment
 
 Segment a 2D numpy array.
 """
+import numpy as np
 import gfa_reduce.common as common
 import gfa_reduce.analysis.util as util
-from photutils import detect_threshold
 from astropy.convolution import Gaussian2DKernel
-import numpy as np
 from astropy.stats import gaussian_fwhm_to_sigma
-from photutils import detect_sources
+try:
+    # photutils >= 2.0
+    from photutils.detection import detect_threshold, detect_sources
+except ImportError:
+    # photutils < 2.0
+    from photutils import detect_threshold, detect_sources
+
 
 def segmentation_map(image, extname, get_kernel=False):
-    # in this context image means a 2D numpy array rather than a GFA_image
-    # object
+    """Perform segmentation on `image`.
+
+    Parameters
+    ----------
+    image : :class:`numpy.ndarray`
+        A 2D NumPy array rather than a GFA_image object.
+    extname : :class:`str`
+        This parameter does not appear to be used.
+    get_kernel : :class:`bool`, optional
+        If ``True``, return the kernel used in segmentation.
+
+    Returns
+    -------
+    :class:`~photutils.segmentation.SegmentationImage`
+        A segmentation image.
+    """
 
     par = common.gfa_misc_params()
 
