@@ -6,7 +6,7 @@ import unittest
 import os
 import tempfile
 from shutil import rmtree
-from ..common import retrieve_git_rev
+from .. import common
 
 
 class TestCommon(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestCommon(unittest.TestCase):
     def test_retrieve_git_rev(self):
         """Test git revision in a git checkout.
         """
-        foo = retrieve_git_rev()
+        foo = common.retrieve_git_rev()
         self.assertRegex(foo, '[0-9a-f]+')
 
     def test_retrieve_git_rev_no_checkout(self):
@@ -40,5 +40,5 @@ class TestCommon(unittest.TestCase):
         with open(test_file, 'w') as f:
             f.write('This is a test.')
         with self.assertRaises(RuntimeError) as e:
-            foo = retrieve_git_rev(test_file)
+            foo = common.retrieve_git_rev(test_file)
         os.remove(test_file)
