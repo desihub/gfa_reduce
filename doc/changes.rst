@@ -6,10 +6,13 @@ Change Log
 tags have been created to be consistent with ``X.Y.Z`` conventions, and the
 corresponding old tag is listed with the date in the titles below.
 
-1.0.4 (unreleased)
+1.1.0 (2026-05-29)
 ------------------
 
-* No changes yet.
+* Add support for recent Python, NumPy, Astropy, photutils related to
+  desiconda migration to Python 3.13 (PR `#30`_).
+
+.. _`#30`: https://github.com/desihub/gfa_reduce/pull/30
 
 1.0.3 (2024-12-03)
 ------------------
