@@ -10,20 +10,32 @@ import gfa_reduce.common as common
 import numpy as np
 import os
 from astropy.table import Table
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, AltAz, get_sun
+_has_get_moon = False
+try:
+    # astropy >= 7
+    from astropy.coordinates import get_body
+except ImportError:
+    # astropy < 7
+    from astropy.coordinates import get_moon
+    _has_get_moon = True
+from astropy.io import fits
+from astropy.time import Time
+from astropy.stats import sigma_clipped_stats
 from astropy import units as u
 from scipy.ndimage.interpolation import shift
-import astropy.io.fits as fits
 from scipy.optimize import minimize
 import gfa_reduce.xmatch.gaia as gaia
-from astropy.time import Time
-import astropy
 from datetime import datetime
-from photutils import aperture_photometry
-from photutils import CircularAperture, CircularAnnulus, EllipticalAperture
-import photutils
-from astropy.stats import sigma_clipped_stats
+try:
+    # photutils >= 2.0; EllipticalAperture does not appear to be used.
+    from photutils.aperture import aperture_photometry, CircularAperture, CircularAnnulus  # , EllipticalAperture
+except ImportError:
+    # photutils < 2.0
+    from photutils import aperture_photometry, CircularAperture, CircularAnnulus  # , EllipticalAperture
+from photutils import __version__ as photutils_version
 from desiutil.log import get_logger
+
 
 def use_for_fwhm_meas(tab, bad_amps=None, snr_thresh=20,
                       no_sig_major_cut=False):
@@ -418,7 +430,6 @@ def _stamp_radius_mask(sidelen, return_radius=False,
         return mask, dist.reshape(sidelen, sidelen)
 
 def _test_shift():
-    import astropy.io.fits as fits
     im = fits.getdata('gaussian.fits')
 
     result = _shift_stamp(im, 0.5, 0.0)
@@ -802,9 +813,11 @@ def coadd_cube_index_range(bintable, cube_index, mjdrange):
 
 # from John Moustakas notebook
 def moon_phase_angle(time, location):
-    sun = astropy.coordinates.get_sun(time).transform_to(astropy.coordinates.AltAz(
-        location=location, obstime=time))
-    moon = astropy.coordinates.get_moon(time, location)
+    sun = get_sun(time).transform_to(AltAz(location=location, obstime=time))
+    if _has_get_moon:
+        moon = get_moon(time, location)
+    else:
+        moon = get_body('moon', time, location=location)
     elongation = sun.separation(moon)
     return np.arctan2(sun.distance*np.sin(elongation),
                       moon.distance - sun.distance*np.cos(elongation))
@@ -943,7 +956,7 @@ def get_obs_night_now(verbose=False):
 def _get_area_from_ap(ap):
     # this is to try and work around the photutils API change
     # between versions 0.6 and 0.7+
-    if photutils.__version__.find('0.6') != -1:
+    if photutils_version.find('0.6') != -1:
         area = ap.area() # 0.6
     else:
         area = ap.area # 0.7 or above
