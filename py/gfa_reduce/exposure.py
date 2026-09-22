@@ -13,7 +13,7 @@ import astropy.io.fits as fits
 import numpy as np
 import gfa_reduce.analysis.util as util
 import gfa_reduce.analysis.phot as phot
-from multiprocessing import Pool
+import multiprocessing as mp
 
 from desiutil.log import get_logger
 
@@ -136,8 +136,9 @@ class GFA_exposure:
             self.log.info('Computing dark scalings for all guide cameras in parallel...')
             nproc = len(args)
             assert(nproc <= 6)
-            p = Pool(nproc)
-            results = p.starmap(dark_current.total_dark_image_adu, args)
+            with mp.get_context('fork').Pool(nproc) as p:
+                # p = Pool(nproc)
+                results = p.starmap(dark_current.total_dark_image_adu, args)
 
             for i, result in enumerate(results):
                 extname = args[i][0]
