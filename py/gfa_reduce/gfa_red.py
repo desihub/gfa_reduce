@@ -10,6 +10,10 @@ import argparse
 import os
 import gfa_reduce.io as io
 from datetime import datetime
+try:
+    from datetime import UTC
+except ImportError:
+    from pytz import UTC
 import gfa_reduce.analysis.util as util
 import gfa_reduce.common as common
 import gfa_reduce.analysis.recalib_astrom as wcs
@@ -75,7 +79,7 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
           exp_data=None, minimal_ccds_metadata=False,
           skip_2d_gaussians=False, mjdmin=None, mjdmax=None, pmgstars=False):
     log = get_logger()
-    log.info('Starting GFA reduction pipeline at: ' + str(datetime.utcnow()) +
+    log.info('Starting GFA reduction pipeline at: ' + str(datetime.now(UTC)) +
              ' UTC')
 
     t0 = time.time()
@@ -252,7 +256,7 @@ def _proc(fname_in=None, outdir=None, careful_sky=False,
 
     dt = time.time() - t0
     log.info('GFA reduction pipeline took ' + '{:.2f}'.format(dt) + ' seconds')
-    log.info('GFA reduction pipeline completed at: ' + str(datetime.utcnow()) +
+    log.info('GFA reduction pipeline completed at: ' + str(datetime.now(UTC)) +
              ' UTC')
 
     # for field acquisition mode

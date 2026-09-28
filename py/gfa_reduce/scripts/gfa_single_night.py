@@ -9,8 +9,15 @@ Process a single night of GFA images.
 Revised from Aaron Meisner's gfa_realtime.py.
 """
 import sys, os, time
-from datetime import datetime
-import multiprocessing as mp
+# from datetime import datetime
+import multiprocessing
+if os.name == 'posix':
+    try:
+        _mp = multiprocessing.get_context('fork')
+    except ValueError:
+        _mp = multiprocessing.get_context()
+else:
+    _mp = multiprocessing
 import argparse
 import glob
 from ..gfa_red import _proc
@@ -159,7 +166,7 @@ def _gfa_single_night(night='20210405', numworkers=8,
     night_basedir_out = _set_night_basedir_out(night, out_basedir)
 
 #- Create communication queue to pass files to workers
-    q = mp.Queue()
+    q = _mp.Queue()
 
 
 #- Track what files have already been added to queue.
@@ -233,7 +240,7 @@ def _gfa_single_night(night='20210405', numworkers=8,
 
 #- Start workers
     for i in range(numworkers):
-        p = mp.Process(target=_run, args=(i, q, out_basedir, focus))
+        p = _mp.Process(target=_run, args=(i, q, out_basedir, focus))
         procs.append(p)
         p.start()
 

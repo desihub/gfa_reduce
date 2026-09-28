@@ -16,7 +16,7 @@ from astropy.modeling.models import Const2D, Gaussian2D
 from astropy.utils.exceptions import AstropyUserWarning
 import numpy as np
 from photutils.morphology import data_properties
-
+from desiutil.log import get_logger
 
 def fit_2dgaussian(data, error=None, mask=None):
     """
@@ -42,6 +42,7 @@ def fit_2dgaussian(data, error=None, mask=None):
     result : A `GaussianConst2D` model instance.
         The best-fitting Gaussian 2D model.
     """
+    log = get_logger()
     data = np.ma.asanyarray(data)
 
     if mask is not None and mask is not np.ma.nomask:
@@ -74,6 +75,21 @@ def fit_2dgaussian(data, error=None, mask=None):
         weights[data.mask] = 0.
 
     mask = data.mask
+    #
+    # Prior to photutils 3.0.0, one could "get away with" a scalar mask, but
+    # in 3.0.0 an explicit check was added to the data_properties() function.
+    #
+    if mask.shape != data.shape:
+        if len(mask.shape) == 0:
+            log.warning('Scalar mask detected, promoting to array with the same size as data.')
+            if data.mask is np.False_:
+                mask = np.zeros(data.shape, dtype=np.bool)
+            if data.mask is np.True_:
+                mask = np.ones(data.shape, dtype=np.bool)
+        else:
+            log.error('data.shape = %s', str(data.shape))
+            log.error('mask.shape = %s', str(mask.shape))
+            raise ValueError('Mask shape mismatch detected, no obvious fix!')
     data.fill_value = 0.
     data = data.filled()
 

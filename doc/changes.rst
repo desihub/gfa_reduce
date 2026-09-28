@@ -9,7 +9,9 @@ corresponding old tag is listed with the date in the titles below.
 1.1.1 (unreleased)
 ------------------
 
-* No changes yet.
+* Support changes to ``multiprocessing`` in Python 3.14 (PR `#31`_).
+
+.. _`#31`: https://github.com/desihub/gfa_reduce/pull/31
 
 1.1.0 (2026-05-29)
 ------------------
