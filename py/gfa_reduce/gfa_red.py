@@ -9,7 +9,11 @@ Primary driver that gets called to run the GFA reduction pipeline end to end.
 import argparse
 import os
 import gfa_reduce.io as io
-from datetime import datetime, UTC
+from datetime import datetime
+try:
+    from datetime import UTC
+except ImportError:
+    from pytz import UTC
 import gfa_reduce.analysis.util as util
 import gfa_reduce.common as common
 import gfa_reduce.analysis.recalib_astrom as wcs
