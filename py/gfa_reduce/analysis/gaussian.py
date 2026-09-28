@@ -16,7 +16,7 @@ from astropy.modeling.models import Const2D, Gaussian2D
 from astropy.utils.exceptions import AstropyUserWarning
 import numpy as np
 from photutils.morphology import data_properties
-
+from desiutil.log import get_logger
 
 def fit_2dgaussian(data, error=None, mask=None):
     """
@@ -42,7 +42,10 @@ def fit_2dgaussian(data, error=None, mask=None):
     result : A `GaussianConst2D` model instance.
         The best-fitting Gaussian 2D model.
     """
+    log = get_logger()
     data = np.ma.asanyarray(data)
+    log.info("data.shape = %s", str(data.shape))
+    log.info("data.mask.shape = %s", str(data.mask.shape))
 
     if mask is not None and mask is not np.ma.nomask:
         mask = np.asanyarray(mask)
