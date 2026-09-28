@@ -44,8 +44,6 @@ def fit_2dgaussian(data, error=None, mask=None):
     """
     log = get_logger()
     data = np.ma.asanyarray(data)
-    log.info("data.shape = %s", str(data.shape))
-    log.info("data.mask.shape = %s", str(data.mask.shape))
 
     if mask is not None and mask is not np.ma.nomask:
         mask = np.asanyarray(mask)
@@ -77,6 +75,21 @@ def fit_2dgaussian(data, error=None, mask=None):
         weights[data.mask] = 0.
 
     mask = data.mask
+    #
+    # Prior to photutils 3.0.0, one could "get away with" a scalar mask, but
+    # in 3.0.0 an explicit check was added to the data_properties() function.
+    #
+    if mask.shape != data.shape:
+        if len(mask.shape) == 0:
+            log.warning('Scalar mask detected, promoting to array with the same size as data.')
+            if data.mask is np.False_:
+                mask = np.zeros(data.shape, dtype=np.bool)
+            if data.mask is np.True_:
+                mask = np.ones(data.shape, dtype=np.bool)
+        else:
+            log.error('data.shape = %s', str(data.shape))
+            log.error('mask.shape = %s', str(mask.shape))
+            raise ValueError('Mask shape mismatch detected, no obvious fix!')
     data.fill_value = 0.
     data = data.filled()
 
