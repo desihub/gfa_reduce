@@ -244,11 +244,13 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
     if cube_index != None:
         util._patch_guider_mjd_obs(exp)
 
-    log.info('Successfully loaded exposure : %s', fname)
-    log.info('Exposure has ' + str(exp.num_images_populated()) +
-             ' image extensions populated')
-    log.info('Populated image extension names are : ' +
-             str(exp.populated_extnames()))
+    hdul.close()
+
+    log.info('Successfully loaded exposure: %s.', fname)
+    log.info('Exposure has %d image extensions populated.',
+             exp.num_images_populated())
+    log.info('Populated image extension names are: %s.',
+             exp.populated_extnames())
 
     return exp
 

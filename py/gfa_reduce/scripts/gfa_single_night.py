@@ -109,11 +109,11 @@ def _run(workerid, q, out_basedir, focus):
 
         try:
             if not focus:
-                _proc(filename, outdir=outdir, realtime=True,
+                _proc(filename, outdir=outdir, realtime=False,
                       cube_index=image.cube_index, skip_image_outputs=True,
                       skip_raw_imstats=False, pmgstars=True, mjdmin=image.mjdmin, mjdmax=image.mjdmax)
             else:
-                _proc(filename, outdir=outdir, realtime=True,
+                _proc(filename, outdir=outdir, realtime=False,
                       cube_index=image.cube_index, skip_image_outputs=True,
                       skip_raw_imstats=True, skip_astrometry=True,
                       no_ps1_xmatch=True, no_gaia_xmatch=True,
