@@ -18,6 +18,7 @@ import numpy as np
 from photutils.morphology import data_properties
 from desiutil.log import get_logger
 
+
 def fit_2dgaussian(data, error=None, mask=None):
     """
     Fit a 2D Gaussian plus a constant to a 2D image.
@@ -103,20 +104,20 @@ def fit_2dgaussian(data, error=None, mask=None):
     init_amplitude = np.ptp(data)
 
     g_init = GaussianConst2D(constant=init_const, amplitude=init_amplitude,
-                             x_mean=props.xcentroid,
-                             y_mean=props.ycentroid,
-                             x_stddev=props.semimajor_sigma.value,
-                             y_stddev=props.semiminor_sigma.value,
+                             x_mean=props.x_centroid,
+                             y_mean=props.y_centroid,
+                             x_stddev=props.semimajor_axis.value,
+                             y_stddev=props.semiminor_axis.value,
                              theta=props.orientation.value)
 
     # original code from photutil.centroids.gaussian.py 1.0.0. Cannot be used in
     # its original form due to API changes in photutils v1.1
-    #g_init = GaussianConst2D(constant=init_const, amplitude=init_amplitude,
-    #                         x_mean=props.xcentroid.value,
-    #                         y_mean=props.ycentroid.value,
-    #                         x_stddev=props.semimajor_axis_sigma.value,
-    #                         y_stddev=props.semiminor_axis_sigma.value,
-    #                         theta=props.orientation.value)
+    # g_init = GaussianConst2D(constant=init_const, amplitude=init_amplitude,
+    #                          x_mean=props.xcentroid.value,
+    #                          y_mean=props.ycentroid.value,
+    #                          x_stddev=props.semimajor_axis_sigma.value,
+    #                          y_stddev=props.semiminor_axis_sigma.value,
+    #                          theta=props.orientation.value)
 
     fitter = LevMarLSQFitter()
     y, x = np.indices(data.shape)
