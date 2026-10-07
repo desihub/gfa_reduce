@@ -11,7 +11,7 @@ This is mainly going to be a wrapper for :func:`~gfa_reduce.analysis.asterisms.p
 from .asterisms import pattern_match, gaia_cat_for_exp
 import numpy as np
 import astropy.io.fits as fits
-from multiprocessing import Pool
+import multiprocessing as mp
 import time
 from astropy.table import Table
 from desiutil.log import get_logger
@@ -58,8 +58,9 @@ def recalib_astrom(cat, fname_raw, mjd=None, h=None, mp=False,
         log.info('Running astrometric pattern matching for all guide cameras in parallel...')
         nproc = len(args)
         assert(nproc <= 6)
-        p = Pool(nproc)
-        result = p.starmap(pattern_match, args)
+        with mp.get_context('fork').Pool(nproc) as p:
+            # p = Pool(nproc)
+            result = p.starmap(pattern_match, args)
 
     det_ids_used = set(np.concatenate([r['det_ids_used'] for r in result]))
     used_astrom_calibrator = np.array([(d in det_ids_used) for d in cat['det_id']])
