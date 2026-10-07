@@ -82,7 +82,7 @@ def fit_2dgaussian(data, error=None, mask=None):
     #
     if mask.shape != data.shape:
         if len(mask.shape) == 0:
-            log.warning('Scalar mask detected, promoting to array with the same size as data.')
+            log.debug('Scalar mask detected, promoting to array with the same size as data.')
             if data.mask is np.False_:
                 mask = np.zeros(data.shape, dtype=np.bool)
             if data.mask is np.True_:
