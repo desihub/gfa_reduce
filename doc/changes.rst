@@ -6,10 +6,12 @@ Change Log
 tags have been created to be consistent with ``X.Y.Z`` conventions, and the
 corresponding old tag is listed with the date in the titles below.
 
-1.1.1 (unreleased)
+1.1.1 (2026-10-12)
 ------------------
 
-* No changes yet.
+* Support changes to ``multiprocessing`` in Python 3.14 (PR `#31`_).
+
+.. _`#31`: https://github.com/desihub/gfa_reduce/pull/31
 
 1.1.0 (2026-05-29)
 ------------------

@@ -10,7 +10,7 @@ import argparse
 import datetime
 import glob
 import os
-from multiprocessing import Pool
+import multiprocessing as mp
 import numpy as np
 import astropy.io.fits as fits
 from astropy.table import Table, vstack
@@ -163,12 +163,13 @@ def _concat(night='20201214', basedir=None, acq=False, user_basedir=None,
         return None
 
     log.info('Initializing pool with %d workers.', workers)
-    p = Pool(workers)
+    with mp.get_context('fork').Pool(workers) as p:
+        # p = Pool(workers)
 
-    tables = p.map(_read_one_ccds_table, flist)
+        tables = p.map(_read_one_ccds_table, flist)
 
-    p.close()
-    p.join()
+        p.close()
+        p.join()
 
     result = vstack(tables)
 

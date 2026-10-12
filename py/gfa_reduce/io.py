@@ -13,6 +13,7 @@ import gfa_reduce.xmatch.gaia as gaia
 import astropy.io.fits as fits
 from astropy.table import Table, vstack, hstack
 import os
+import errno
 import gfa_reduce.analysis.basic_image_stats as bis
 import gfa_reduce.analysis.basic_catalog_stats as bcs
 import gfa_reduce.analysis.util as util
@@ -107,7 +108,8 @@ def realtime_raw_read(fname, delay=2.0, max_attempts=5):
     log = get_logger()
     # something has gone badly wrong if the filename doesn't even exist
     # that's not the scenario I'm trying to address here
-    assert(os.path.exists(fname))
+    if not os.path.exists(fname):
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), fname)
 
     hdul = None
     for i in range(max_attempts):
@@ -117,14 +119,17 @@ def realtime_raw_read(fname, delay=2.0, max_attempts=5):
             for hdu in hdul:
                 _, __ = hdu.data, hdu.header
                 ___ = hdu.data.shape
-        except:
+        except Exception as ex:
             log.warning('encountered problem reading %s', fname)
+            log.warning('exception: %s was raised.', repr(ex))
             time.sleep(delay)
         if hdul is not None:
             break
 
     # die if unable to read file after max_attempts attempts
-    assert(hdul is not None)
+    if hdul is None:
+        log.critical("Could not succesfully read %s!", fname)
+        raise RuntimeError(f"Could not successfully read {fname}!")
 
     return hdul
 
@@ -239,11 +244,13 @@ def load_exposure(fname=None, verbose=True, realtime=False, cube_index=None,
     if cube_index != None:
         util._patch_guider_mjd_obs(exp)
 
-    log.info('Successfully loaded exposure : %s', fname)
-    log.info('Exposure has ' + str(exp.num_images_populated()) +
-             ' image extensions populated')
-    log.info('Populated image extension names are : ' +
-             str(exp.populated_extnames()))
+    hdul.close()
+
+    log.info('Successfully loaded exposure: %s.', fname)
+    log.info('Exposure has %d image extensions populated.',
+             exp.num_images_populated())
+    log.info('Populated image extension names are: %s.',
+             exp.populated_extnames())
 
     return exp
 
