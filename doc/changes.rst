@@ -6,7 +6,7 @@ Change Log
 tags have been created to be consistent with ``X.Y.Z`` conventions, and the
 corresponding old tag is listed with the date in the titles below.
 
-1.1.1 (unreleased)
+1.1.1 (2026-10-12)
 ------------------
 
 * Support changes to ``multiprocessing`` in Python 3.14 (PR `#31`_).
